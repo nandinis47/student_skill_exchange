@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Skills - Student Skills Exchange</title>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <style>
+        .skills-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .skill-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .skill-list-item:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .skill-list-item-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .add-skill-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .add-skill-form select,
+        .add-skill-form input {
+            flex: 1;
+        }
+
+        .new-skill-section {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .new-skill-section label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .skills-columns { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="dashboard.html" class="navbar-brand">
+            <div class="logo-icon">🎓</div>
+            Skills Exchange
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+            <li><a href="skills.html" data-page="skills">⚡ My Skills</a></li>
+            <li><a href="search.html" data-page="search">🔍 Search</a></li>
+            <li><a href="requests.html" data-page="requests">🔄 Requests</a></li>
+            <li><a href="messages.html" data-page="messages">💬 Messages</a></li>
+            <li><a href="profile.html" data-page="profile">👤 Profile</a></li>
+        </ul>
+        <div class="navbar-user">
+            <div class="user-avatar" id="nav-avatar">?</div>
+            <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
+            <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>⚡ My Skills</h1>
+            <p>Manage the skills you can teach and the skills you want to learn</p>
+        </div>
+
+        <div id="alert-box"></div>
+
+        <!-- Add Skill Panel -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-title">➕ Add a Skill</div>
+            <div class="add-skill-form">
+                <select class="form-control" id="skill-select">
+                    <option value="">Select a skill...</option>
+                </select>
+                <select class="form-control" id="skill-type" style="max-width:160px;">
+                    <option value="teach">I can Teach</option>
+                    <option value="learn">I want to Learn</option>
+                </select>
+                <button class="btn btn-primary" onclick="addSkill()">Add</button>
+            </div>
+
+            <div class="new-skill-section">
+                <label>Can't find your skill? Add a new one to the database:</label>
+                <div class="add-skill-form">
+                    <input type="text" class="form-control" id="new-skill-name"
+                           placeholder="e.g. Flutter, Blockchain, etc.">
+                    <button class="btn btn-secondary" onclick="addNewSkill()">+ Create Skill</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills Display -->
+        <div class="skills-columns">
+            <!-- Teach -->
+            <div class="card">
+                <div class="card-title" style="color: #137333;">
+                    🎓 Skills I Can Teach
+                    <span id="teach-count" class="badge badge-teach" style="margin-left:auto;">0</span>
+                </div>
+                <div id="teach-list">
+                    <div class="loading-overlay"><div class="spinner"></div></div>
+                </div>
+            </div>
+
+            <!-- Learn -->
+            <div class="card">
+                <div class="card-title" style="color: var(--primary);">
+                    📚 Skills I Want to Learn
+                    <span id="learn-count" class="badge badge-learn" style="margin-left:auto;">0</span>
+                </div>
+                <div id="learn-list">
+                    <div class="loading-overlay"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js?v=2.0"></script>
+    <script>
+        requireAuth();
+        renderNavUser();
+        setActiveNav('skills');
+
+        const student = getCurrentStudent();
+        let allSkills = [];
+        let mySkills = [];
+
+        async function loadData() {
+            const [skillsRes, profileRes] = await Promise.all([
+                Skills.getAll(),
+                Students.getById(student.id)
+            ]);
+
+            if (skillsRes.ok) {
+                allSkills = skillsRes.data;
+                populateSkillSelect();
+            }
+
+            if (profileRes.ok) {
+                mySkills = profileRes.data.skills;
+                renderSkills();
+            }
+        }
+
+        function populateSkillSelect() {
+            const sel = document.getElementById('skill-select');
+            sel.innerHTML = '<option value="">Select a skill...</option>' +
+                allSkills.map(s => `<option value="${s.skill_id}">${s.skill_name}</option>`).join('');
+        }
+
+        function renderSkills() {
+            const teaches = mySkills.filter(s => s.type === 'teach');
+            const learns  = mySkills.filter(s => s.type === 'learn');
+
+            document.getElementById('teach-count').textContent = teaches.length;
+            document.getElementById('learn-count').textContent = learns.length;
+
+            document.getElementById('teach-list').innerHTML = teaches.length
+                ? teaches.map(s => skillItem(s)).join('')
+                : emptySkillMsg('No teaching skills added yet');
+
+            document.getElementById('learn-list').innerHTML = learns.length
+                ? learns.map(s => skillItem(s)).join('')
+                : emptySkillMsg('No learning goals added yet');
+        }
+
+        function skillItem(s) {
+            return `
+                <div class="skill-list-item" id="skill-item-${s.id}">
+                    <div class="skill-list-item-left">
+                        <span>${s.type === 'teach' ? '⚡' : '📚'}</span>
+                        <span>${s.skill_name}</span>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeSkill(${s.id})">✕</button>
+                </div>`;
+        }
+
+        function emptySkillMsg(msg) {
+            return `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.875rem;">${msg}</div>`;
+        }
+
+        async function addSkill() {
+            const skill_id = document.getElementById('skill-select').value;
+            const type = document.getElementById('skill-type').value;
+            const alertBox = document.getElementById('alert-box');
+
+            if (!skill_id) {
+                showAlert(alertBox, 'Please select a skill', 'error');
+                return;
+            }
+
+            const res = await Skills.addStudentSkill(student.id, skill_id, type);
+            if (res.ok) {
+                showAlert(alertBox, 'Skill added successfully!', 'success');
+                await loadData();
+            } else {
+                showAlert(alertBox, res.data.error || 'Failed to add skill', 'error');
+            }
+        }
+
+        async function addNewSkill() {
+            const name = document.getElementById('new-skill-name').value.trim();
+            const alertBox = document.getElementById('alert-box');
+
+            if (!name) {
+                showAlert(alertBox, 'Enter a skill name', 'error');
+                return;
+            }
+
+            const res = await Skills.addSkill(name);
+            if (res.ok) {
+                showAlert(alertBox, `"${name}" added to skills database!`, 'success');
+                document.getElementById('new-skill-name').value = '';
+                await loadData();
+            } else {
+                showAlert(alertBox, res.data.error || 'Failed to create skill', 'error');
+            }
+        }
+
+        async function removeSkill(id) {
+            if (!confirm('Remove this skill?')) return;
+            const res = await Skills.removeStudentSkill(id);
+            if (res.ok) {
+                mySkills = mySkills.filter(s => s.id !== id);
+                renderSkills();
+                showAlert(document.getElementById('alert-box'), 'Skill removed', 'info');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

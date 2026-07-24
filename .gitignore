@@ -1,0 +1,37 @@
+# ── Python ──────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+env/
+.venv/
+.env
+
+# ── Logs ─────────────────────────────────────────
+logs/
+*.log
+
+# ── Database secrets ─────────────────────────────
+# Do NOT commit real passwords — change before pushing to GitHub
+# backend/app.py has DB password inline (keep local only if needed)
+
+# ── OS files ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor ───────────────────────────────────────
+.vscode/settings.json
+*.swp
+*.swo
+
+# ── Test / temp files ────────────────────────────
+test_api.py
+test_new_apis.py
+bust_cache.py

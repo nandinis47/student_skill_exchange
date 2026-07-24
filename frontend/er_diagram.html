@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ER Diagram - Student Skills Exchange</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f4ff;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 8px;
+            font-size: 1.6rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #5f6368;
+            margin-bottom: 36px;
+            font-size: 0.9rem;
+        }
+
+        .er-canvas {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #5f6368;
+        }
+
+        .legend-box {
+            width: 20px;
+            height: 14px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎓 Student Skills Exchange</h1>
+    <p class="subtitle">Entity-Relationship Diagram — Database: student_skill_exchange</p>
+
+    <div class="er-canvas">
+        <svg viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#9aa0a6"/>
+                </marker>
+                <filter id="shadow">
+                    <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.12"/>
+                </filter>
+            </defs>
+
+            <!-- ===== RELATIONSHIP LINES ===== -->
+            <!-- students → student_skills -->
+            <line x1="220" y1="160" x2="380" y2="280" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+            <!-- skills → student_skills -->
+            <line x1="740" y1="160" x2="580" y2="280" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+            <!-- students → exchange_requests (sender) -->
+            <line x1="160" y1="220" x2="160" y2="400" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+            <!-- students → exchange_requests (receiver) -->
+            <line x1="200" y1="220" x2="280" y2="400" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+            <!-- skills → exchange_requests -->
+            <line x1="700" y1="220" x2="500" y2="400" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+            <!-- students → messages (sender) -->
+            <line x1="180" y1="220" x2="680" y2="430" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+            <!-- students → messages (receiver) -->
+            <line x1="210" y1="220" x2="720" y2="430" stroke="#9aa0a6" stroke-width="1.5"
+                  stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+
+            <!-- ===== TABLE: students ===== -->
+            <g filter="url(#shadow)">
+                <rect x="60" y="40" width="220" height="220" rx="10" fill="white" stroke="#1a73e8" stroke-width="2"/>
+                <rect x="60" y="40" width="220" height="40" rx="10" fill="#1a73e8"/>
+                <rect x="60" y="68" width="220" height="12" fill="#1a73e8"/>
+                <text x="170" y="66" text-anchor="middle" fill="white" font-size="14" font-weight="700">students</text>
+            </g>
+            <text x="80" y="105" fill="#202124" font-size="12">🔑 id (PK, AUTO_INCREMENT)</text>
+            <text x="80" y="125" fill="#202124" font-size="12">   name VARCHAR(100)</text>
+            <text x="80" y="145" fill="#202124" font-size="12">   email VARCHAR(150) UNIQUE</text>
+            <text x="80" y="165" fill="#202124" font-size="12">   password VARCHAR(255)</text>
+            <text x="80" y="185" fill="#202124" font-size="12">   department VARCHAR(100)</text>
+            <text x="80" y="205" fill="#202124" font-size="12">   year INT (1-5)</text>
+            <text x="80" y="225" fill="#202124" font-size="12">   created_at TIMESTAMP</text>
+
+            <!-- ===== TABLE: skills ===== -->
+            <g filter="url(#shadow)">
+                <rect x="680" y="40" width="220" height="130" rx="10" fill="white" stroke="#34a853" stroke-width="2"/>
+                <rect x="680" y="40" width="220" height="40" rx="10" fill="#34a853"/>
+                <rect x="680" y="68" width="220" height="12" fill="#34a853"/>
+                <text x="790" y="66" text-anchor="middle" fill="white" font-size="14" font-weight="700">skills</text>
+            </g>
+            <text x="700" y="105" fill="#202124" font-size="12">🔑 skill_id (PK, AUTO_INCREMENT)</text>
+            <text x="700" y="125" fill="#202124" font-size="12">   skill_name VARCHAR(100) UNIQUE</text>
+
+            <!-- ===== TABLE: student_skills ===== -->
+            <g filter="url(#shadow)">
+                <rect x="360" y="260" width="240" height="160" rx="10" fill="white" stroke="#f9ab00" stroke-width="2"/>
+                <rect x="360" y="260" width="240" height="40" rx="10" fill="#f9ab00"/>
+                <rect x="360" y="288" width="240" height="12" fill="#f9ab00"/>
+                <text x="480" y="286" text-anchor="middle" fill="white" font-size="14" font-weight="700">student_skills</text>
+            </g>
+            <text x="380" y="325" fill="#202124" font-size="12">🔑 id (PK)</text>
+            <text x="380" y="345" fill="#202124" font-size="12">🔗 student_id (FK → students)</text>
+            <text x="380" y="365" fill="#202124" font-size="12">🔗 skill_id (FK → skills)</text>
+            <text x="380" y="385" fill="#202124" font-size="12">   type ENUM(teach, learn)</text>
+
+            <!-- ===== TABLE: exchange_requests ===== -->
+            <g filter="url(#shadow)">
+                <rect x="60" y="400" width="260" height="190" rx="10" fill="white" stroke="#ea4335" stroke-width="2"/>
+                <rect x="60" y="400" width="260" height="40" rx="10" fill="#ea4335"/>
+                <rect x="60" y="428" width="260" height="12" fill="#ea4335"/>
+                <text x="190" y="426" text-anchor="middle" fill="white" font-size="14" font-weight="700">exchange_requests</text>
+            </g>
+            <text x="80" y="465" fill="#202124" font-size="12">🔑 request_id (PK)</text>
+            <text x="80" y="485" fill="#202124" font-size="12">🔗 sender_id (FK → students)</text>
+            <text x="80" y="505" fill="#202124" font-size="12">🔗 receiver_id (FK → students)</text>
+            <text x="80" y="525" fill="#202124" font-size="12">🔗 skill_id (FK → skills)</text>
+            <text x="80" y="545" fill="#202124" font-size="12">   status ENUM(pending,accepted,rejected)</text>
+            <text x="80" y="565" fill="#202124" font-size="12">   created_at TIMESTAMP</text>
+
+            <!-- ===== TABLE: messages ===== -->
+            <g filter="url(#shadow)">
+                <rect x="640" y="400" width="260" height="190" rx="10" fill="white" stroke="#9c27b0" stroke-width="2"/>
+                <rect x="640" y="400" width="260" height="40" rx="10" fill="#9c27b0"/>
+                <rect x="640" y="428" width="260" height="12" fill="#9c27b0"/>
+                <text x="770" y="426" text-anchor="middle" fill="white" font-size="14" font-weight="700">messages</text>
+            </g>
+            <text x="660" y="465" fill="#202124" font-size="12">🔑 message_id (PK)</text>
+            <text x="660" y="485" fill="#202124" font-size="12">🔗 sender_id (FK → students)</text>
+            <text x="660" y="505" fill="#202124" font-size="12">🔗 receiver_id (FK → students)</text>
+            <text x="660" y="525" fill="#202124" font-size="12">   message TEXT</text>
+            <text x="660" y="545" fill="#202124" font-size="12">   timestamp TIMESTAMP</text>
+
+            <!-- Cardinality labels -->
+            <text x="270" y="210" fill="#1a73e8" font-size="11" font-weight="600">1</text>
+            <text x="370" y="285" fill="#1a73e8" font-size="11" font-weight="600">N</text>
+            <text x="690" y="210" fill="#34a853" font-size="11" font-weight="600">1</text>
+            <text x="590" y="285" fill="#34a853" font-size="11" font-weight="600">N</text>
+        </svg>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-box" style="background:#1a73e8;"></div>
+            students (core entity)
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background:#34a853;"></div>
+            skills
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background:#f9ab00;"></div>
+            student_skills (junction)
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background:#ea4335;"></div>
+            exchange_requests
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background:#9c27b0;"></div>
+            messages
+        </div>
+        <div class="legend-item">
+            <div style="width:20px;height:2px;background:#9aa0a6;border-top:2px dashed #9aa0a6;"></div>
+            Foreign Key relationship
+        </div>
+    </div>
+
+    <div style="max-width:700px;margin:32px auto;background:white;border-radius:12px;padding:24px;
+                border:1px solid #dadce0;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+        <h2 style="color:#1a73e8;margin-bottom:16px;font-size:1.1rem;">📊 Relationships Summary</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+            <thead>
+                <tr style="background:#f8f9fa;">
+                    <th style="padding:10px;text-align:left;border-bottom:1px solid #dadce0;">Relationship</th>
+                    <th style="padding:10px;text-align:left;border-bottom:1px solid #dadce0;">Type</th>
+                    <th style="padding:10px;text-align:left;border-bottom:1px solid #dadce0;">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;">students ↔ skills</td>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;"><span style="background:#fef7e0;color:#b06000;padding:2px 8px;border-radius:10px;font-size:0.8rem;">M:N</span></td>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;">Via student_skills junction table</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;">students → exchange_requests</td>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;"><span style="background:#e8f0fe;color:#1a73e8;padding:2px 8px;border-radius:10px;font-size:0.8rem;">1:N</span></td>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;">As sender and receiver (self-referencing)</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;">students → messages</td>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;"><span style="background:#e8f0fe;color:#1a73e8;padding:2px 8px;border-radius:10px;font-size:0.8rem;">1:N</span></td>
+                    <td style="padding:10px;border-bottom:1px solid #f0f0f0;">As sender and receiver (self-referencing)</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px;">skills → exchange_requests</td>
+                    <td style="padding:10px;"><span style="background:#e8f0fe;color:#1a73e8;padding:2px 8px;border-radius:10px;font-size:0.8rem;">1:N</span></td>
+                    <td style="padding:10px;">One skill can be in many requests</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Requests - Student Skills Exchange</title>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            margin-bottom: 24px;
+            width: fit-content;
+        }
+
+        .tab {
+            padding: 8px 20px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .request-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: all 0.2s;
+        }
+
+        .request-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .request-card-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+        }
+
+        .request-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 3px;
+        }
+
+        .request-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .arrow-icon {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="dashboard.html" class="navbar-brand">
+            <div class="logo-icon">🎓</div>
+            Skills Exchange
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+            <li><a href="skills.html" data-page="skills">⚡ My Skills</a></li>
+            <li><a href="search.html" data-page="search">🔍 Search</a></li>
+            <li><a href="requests.html" data-page="requests">🔄 Requests</a></li>
+            <li><a href="messages.html" data-page="messages">💬 Messages</a></li>
+            <li><a href="profile.html" data-page="profile">👤 Profile</a></li>
+        </ul>
+        <div class="navbar-user">
+            <div class="user-avatar" id="nav-avatar">?</div>
+            <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
+            <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>🔄 Exchange Requests</h1>
+            <p>Manage incoming and outgoing skill exchange requests</p>
+        </div>
+
+        <div id="alert-box"></div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('incoming')">
+                📥 Incoming <span id="incoming-badge" class="badge badge-pending" style="margin-left:4px;"></span>
+            </button>
+            <button class="tab" onclick="switchTab('outgoing')">📤 Outgoing</button>
+            <button class="tab" onclick="switchTab('all')">📋 All</button>
+        </div>
+
+        <div id="requests-container">
+            <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+    </div>
+
+    <script src="js/api.js?v=2.0"></script>
+    <script>
+        requireAuth();
+        renderNavUser();
+        setActiveNav('requests');
+
+        const student = getCurrentStudent();
+        let allRequests = [];
+        let currentTab = 'incoming';
+
+        async function loadRequests() {
+            const res = await Requests.getForStudent(student.id);
+            if (res.ok) {
+                allRequests = res.data;
+                const pendingIncoming = allRequests.filter(
+                    r => r.receiver_id === student.id && r.status === 'pending'
+                ).length;
+                const badge = document.getElementById('incoming-badge');
+                badge.textContent = pendingIncoming || '';
+                badge.style.display = pendingIncoming ? 'inline-flex' : 'none';
+                renderTab(currentTab);
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('active',
+                    (i === 0 && tab === 'incoming') ||
+                    (i === 1 && tab === 'outgoing') ||
+                    (i === 2 && tab === 'all')
+                );
+            });
+            renderTab(tab);
+        }
+
+        function renderTab(tab) {
+            let filtered;
+            if (tab === 'incoming') {
+                filtered = allRequests.filter(r => r.receiver_id === student.id);
+            } else if (tab === 'outgoing') {
+                filtered = allRequests.filter(r => r.sender_id === student.id);
+            } else {
+                filtered = allRequests;
+            }
+            renderRequests(filtered, tab);
+        }
+
+        function renderRequests(requests, tab) {
+            const container = document.getElementById('requests-container');
+
+            if (!requests.length) {
+                container.innerHTML = `<div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>No ${tab} requests</h3>
+                    <p>${tab === 'incoming'
+                        ? 'No one has sent you a request yet'
+                        : tab === 'outgoing'
+                        ? 'You haven\'t sent any requests yet'
+                        : 'No exchange requests found'}</p>
+                    ${tab !== 'incoming' ? '<a href="search.html" class="btn btn-primary" style="margin-top:12px;">Find Students</a>' : ''}
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = requests.map(r => {
+                const isIncoming = r.receiver_id === student.id;
+                const otherName  = isIncoming ? r.sender_name : r.receiver_name;
+                const otherId    = isIncoming ? r.sender_id : r.receiver_id;
+
+                return `
+                <div class="request-card" id="req-${r.request_id}">
+                    <div class="request-card-left">
+                        <div class="student-avatar">${getInitials(otherName)}</div>
+                        <div class="request-info">
+                            <h4>
+                                ${isIncoming
+                                    ? `<span style="color:var(--primary);">${r.sender_name}</span> → You`
+                                    : `You → <span style="color:var(--primary);">${r.receiver_name}</span>`}
+                            </h4>
+                            <p>
+                                Skill: <strong>${r.skill_name}</strong> •
+                                ${formatDate(r.created_at)}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <span class="badge badge-${r.status}">${r.status}</span>
+                        ${isIncoming && r.status === 'pending' ? `
+                            <button class="btn btn-success btn-sm"
+                                    onclick="updateStatus(${r.request_id}, 'accepted')">✓ Accept</button>
+                            <button class="btn btn-danger btn-sm"
+                                    onclick="updateStatus(${r.request_id}, 'rejected')">✕ Reject</button>
+                        ` : ''}
+                        <button class="btn btn-secondary btn-sm"
+                                onclick="window.location.href='messages.html?to=${otherId}&name=${encodeURIComponent(otherName)}'">
+                            💬
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function updateStatus(request_id, status) {
+            const res = await Requests.updateStatus(request_id, status);
+            if (res.ok) {
+                showAlert(document.getElementById('alert-box'),
+                    `Request ${status}!`, status === 'accepted' ? 'success' : 'info');
+                await loadRequests();
+            }
+        }
+
+        loadRequests();
+    </script>
+</body>
+</html>

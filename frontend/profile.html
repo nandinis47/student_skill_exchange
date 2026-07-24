@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile - Student Skills Exchange</title>
+<link rel="stylesheet" href="css/style.css?v=2.0">
+<style>
+/* ── profile-specific ── */
+.profile-layout { display: grid; grid-template-columns: 310px 1fr; gap: 24px; }
+@media(max-width:700px){ .profile-layout{grid-template-columns:1fr;} }
+
+.profile-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow);
+}
+.profile-card-banner {
+    height: 80px;
+    background: linear-gradient(135deg,#1a73e8,#0d47a1);
+}
+.profile-card-body { padding: 0 24px 24px; text-align: center; }
+
+.profile-big-avatar {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg,var(--primary),#4285f4);
+    border-radius: 50%; border: 4px solid white;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.8rem; font-weight: 700;
+    margin: -40px auto 12px; box-shadow: 0 4px 12px rgba(26,115,232,0.3);
+}
+.profile-name  { font-size: 1.15rem; font-weight: 700; margin-bottom: 3px; }
+.profile-email { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px; }
+.profile-meta  { display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.meta-chip     { background:var(--primary-light); color:var(--primary); padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:500; }
+
+/* XP bar inside card */
+.xp-mini { margin: 12px 0; }
+.xp-mini-bar { height: 8px; background:var(--bg); border-radius:4px; overflow:hidden; border:1px solid var(--border); }
+.xp-mini-fill { height:100%; background:linear-gradient(90deg,#1a73e8,#34a853); border-radius:4px; transition:width .8s ease; }
+.xp-mini-label { font-size:0.75rem; color:var(--text-muted); text-align:right; margin-top:3px; }
+
+.profile-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.profile-stat  { background:var(--bg); border-radius:var(--radius-sm); padding:10px; text-align:center; border:1px solid var(--border); }
+.profile-stat h4 { font-size:1.2rem; font-weight:700; color:var(--primary); }
+.profile-stat p  { font-size:0.72rem; color:var(--text-muted); }
+
+/* Bio */
+.bio-display { 
+    background:var(--bg); border-radius:var(--radius-sm); padding:12px 14px;
+    font-size:0.875rem; color:var(--text-dark); line-height:1.6;
+    border:1px solid var(--border); min-height:60px;
+    white-space:pre-wrap; word-break:break-word;
+}
+.bio-placeholder { color:var(--text-muted); font-style:italic; }
+.bio-counter { font-size:0.72rem; color:var(--text-muted); text-align:right; margin-top:4px; }
+
+/* Badges grid */
+.badges-section { display:flex; flex-wrap:wrap; gap:10px; }
+.badge-card {
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:12px 14px; border-radius:var(--radius-sm);
+    border:1px solid var(--border); background:var(--bg);
+    text-align:center; min-width:90px; transition:all 0.2s;
+}
+.badge-card:hover { border-color:var(--primary); background:var(--primary-light); }
+.badge-card.earned { border-color:#34a853; background:#e6f4ea; }
+.badge-icon { font-size:1.8rem; }
+.badge-name { font-size:0.72rem; font-weight:600; color:var(--text-dark); }
+.badge-status { font-size:0.68rem; }
+.badge-status.earned { color:#137333; }
+.badge-status.locked { color:var(--text-muted); }
+.badge-card.locked-card { opacity:0.4; filter:grayscale(1); }
+
+/* Edit form toggle */
+.edit-form { display:none; }
+.edit-form.active { display:block; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand"><div class="logo-icon">🎓</div> Skills Exchange</a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-avatar" id="nav-avatar">?</div>
+        <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
+        <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>👤 My Profile</h1>
+        <p>View and manage your profile, bio, and badges</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <div class="profile-layout">
+        <!-- ── LEFT CARD ── -->
+        <div>
+            <div class="profile-card">
+                <div class="profile-card-banner"></div>
+                <div class="profile-card-body">
+                    <div class="profile-big-avatar" id="p-avatar">?</div>
+                    <div class="profile-name"  id="p-name">Loading...</div>
+                    <div class="profile-email" id="p-email"></div>
+                    <div class="profile-meta">
+                        <span class="meta-chip" id="p-dept">-</span>
+                        <span class="meta-chip" id="p-year">-</span>
+                    </div>
+                    <!-- XP Bar -->
+                    <div class="xp-mini">
+                        <div class="xp-mini-bar">
+                            <div class="xp-mini-fill" id="p-xp-fill" style="width:0%"></div>
+                        </div>
+                        <div class="xp-mini-label" id="p-xp-label">0 XP</div>
+                    </div>
+
+                    <button class="btn btn-outline" style="width:100%;justify-content:center;"
+                            onclick="toggleEdit()">✏️ Edit Profile</button>
+
+                    <div class="profile-stats">
+                        <div class="profile-stat"><h4 id="ps-teach">0</h4><p>Teaching</p></div>
+                        <div class="profile-stat"><h4 id="ps-learn">0</h4><p>Learning</p></div>
+                        <div class="profile-stat"><h4 id="ps-sent">0</h4><p>Sent</p></div>
+                        <div class="profile-stat"><h4 id="ps-recv">0</h4><p>Received</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── RIGHT PANEL ── -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+            <!-- Edit Form -->
+            <div class="card edit-form" id="edit-form">
+                <div class="card-title">✏️ Edit Profile</div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" class="form-control" id="edit-name">
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="form-control" id="edit-dept">
+                            <option>Computer Science</option>
+                            <option>Information Technology</option>
+                            <option>Electronics</option>
+                            <option>Mechanical</option>
+                            <option>Civil</option>
+                            <option>Data Science</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <select class="form-control" id="edit-year">
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Bio -->
+            <div class="card">
+                <div class="card-title" style="justify-content:space-between;">
+                    <span>📝 Bio</span>
+                    <button class="btn btn-secondary btn-sm" id="bio-edit-btn" onclick="toggleBioEdit()">✏️ Edit</button>
+                </div>
+                <!-- Display mode -->
+                <div id="bio-display">
+                    <div class="bio-display" id="bio-text">
+                        <span class="bio-placeholder">No bio yet. Tell others about yourself!</span>
+                    </div>
+                </div>
+                <!-- Edit mode -->
+                <div id="bio-edit-area" style="display:none;">
+                    <textarea class="form-control" id="bio-input" rows="5"
+                        placeholder="Write about yourself... your interests, skills, goals, and what you're looking to learn or teach."
+                        maxlength="1200"
+                        oninput="updateBioCounter()"></textarea>
+                    <div class="bio-counter"><span id="bio-count">0</span> / 200 words</div>
+                    <div style="display:flex;gap:8px;margin-top:10px;">
+                        <button class="btn btn-primary" onclick="saveBio()">Save Bio</button>
+                        <button class="btn btn-secondary" onclick="cancelBioEdit()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earned Badges -->
+            <div class="card">
+                <div class="card-title">🏅 Earned Badges</div>
+                <div id="badges-section">
+                    <div class="loading-overlay"><div class="spinner"></div></div>
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="card">
+                <div class="card-title">⚡ Skills I Can Teach</div>
+                <div id="teach-skills-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📚 Skills I Want to Learn</div>
+                <div id="learn-skills-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+            </div>
+
+            <!-- Activity -->
+            <div class="card">
+                <div class="card-title">📋 Recent Exchange Activity</div>
+                <div id="activity-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/api.js?v=2.0"></script>
+<script>
+requireAuth();
+renderNavUser();
+setActiveNav('profile');
+
+const student = getCurrentStudent();
+
+const ALL_BADGES = [
+    { name:'Newbie',          icon:'🌱',  desc:'Welcome to Skills Exchange!' },
+    { name:'First Exchange',  icon:'🤝',  desc:'Completed first skill exchange' },
+    { name:'Quick Learner',   icon:'⚡',  desc:'Learning 3+ skills' },
+    { name:'Master Teacher',  icon:'👨‍🏫', desc:'Taught 5+ students' },
+    { name:'Streak Master',   icon:'🔥',  desc:'7-day learning streak' },
+    { name:'Social Butterfly',icon:'🦋',  desc:'Connected with 10+ students' },
+    { name:'Knowledge Seeker',icon:'📚',  desc:'Learning 5 skills simultaneously' },
+    { name:'Community Hero',  icon:'🏆',  desc:'Helped 20+ students' },
+];
+
+// ── Load Profile ──────────────────────────────────────────────
+async function loadProfile() {
+    const res = await apiFetch(`/students/${student.id}/full`);
+    if (!res.ok) return;
+    const s = res.data;
+
+    document.getElementById('p-avatar').textContent = getInitials(s.name);
+    document.getElementById('p-name').textContent   = s.name;
+    document.getElementById('p-email').textContent  = s.email;
+    document.getElementById('p-dept').textContent   = s.department || '-';
+    document.getElementById('p-year').textContent   = `Year ${s.year}`;
+
+    // XP bar
+    const xpPct = Math.min(100, Math.round(((s.xp_points||0)/200)*100));
+    document.getElementById('p-xp-fill').style.width = xpPct + '%';
+    document.getElementById('p-xp-label').textContent = `⭐ ${s.xp_points||0} XP  •  🔥 ${s.learning_streak||0} day streak`;
+
+    // Pre-fill edit form
+    document.getElementById('edit-name').value = s.name;
+    document.getElementById('edit-dept').value = s.department;
+    document.getElementById('edit-year').value = s.year;
+
+    // Bio
+    const bioEl = document.getElementById('bio-text');
+    if (s.bio) {
+        bioEl.innerHTML = s.bio;
+    } else {
+        bioEl.innerHTML = '<span class="bio-placeholder">No bio yet. Tell others about yourself!</span>';
+    }
+    document.getElementById('bio-input').value = s.bio || '';
+    updateBioCounter();
+
+    // Skills
+    const teaches = s.skills.filter(sk => sk.type === 'teach');
+    const learns  = s.skills.filter(sk => sk.type === 'learn');
+
+    document.getElementById('ps-teach').textContent = teaches.length;
+    document.getElementById('ps-learn').textContent = learns.length;
+
+    document.getElementById('teach-skills-list').innerHTML = teaches.length
+        ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${teaches.map(sk => `<span class="skill-tag">⚡ ${sk.skill_name}</span>`).join('')}
+           </div>
+           <a href="skills.html" class="btn btn-secondary btn-sm" style="margin-top:10px;">Manage Skills</a>`
+        : `<span style="color:var(--text-muted);font-size:0.875rem;">No teaching skills yet. <a href="skills.html" style="color:var(--primary);">Add some →</a></span>`;
+
+    document.getElementById('learn-skills-list').innerHTML = learns.length
+        ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${learns.map(sk => `<span class="skill-tag" style="background:#e6f4ea;color:#137333;">📚 ${sk.skill_name}</span>`).join('')}
+           </div>`
+        : `<span style="color:var(--text-muted);font-size:0.875rem;">No learning goals. <a href="skills.html" style="color:var(--primary);">Add some →</a></span>`;
+
+    // Badges
+    renderBadges(s.badges || []);
+}
+
+function renderBadges(earned) {
+    const el = document.getElementById('badges-section');
+    const earnedNames = earned.map(b => b.badge_name);
+
+    // Earned first, then locked
+    const sorted = [...ALL_BADGES].sort((a,b) => {
+        const ae = earnedNames.includes(a.name);
+        const be = earnedNames.includes(b.name);
+        return ae === be ? 0 : ae ? -1 : 1;
+    });
+
+    el.innerHTML = `<div class="badges-section">
+        ${sorted.map(b => {
+            const isEarned = earnedNames.includes(b.name);
+            const earnedObj = earned.find(e => e.badge_name === b.name);
+            return `
+            <div class="badge-card ${isEarned ? 'earned' : 'locked-card'}" title="${b.desc}${isEarned && earnedObj ? '\nEarned: ' + formatDate(earnedObj.earned_at) : ''}">
+                <span class="badge-icon">${b.icon}</span>
+                <span class="badge-name">${b.name}</span>
+                <span class="badge-status ${isEarned ? 'earned' : 'locked'}">
+                    ${isEarned ? '✅ Earned' : '🔒 Locked'}
+                </span>
+            </div>`;
+        }).join('')}
+    </div>
+    ${earned.length === 0 ? '<p style="color:var(--text-muted);font-size:0.85rem;margin-top:10px;">Complete exchanges and activities to earn badges!</p>' : ''}`;
+}
+
+// ── Activity ──────────────────────────────────────────────────
+async function loadActivity() {
+    const res = await Requests.getForStudent(student.id);
+    const el  = document.getElementById('activity-list');
+    if (!res.ok || !res.data.length) {
+        el.innerHTML = '<p style="color:var(--text-muted);font-size:0.875rem;">No exchange activity yet.</p>';
+        document.getElementById('ps-sent').textContent = 0;
+        document.getElementById('ps-recv').textContent = 0;
+        return;
+    }
+    const sent = res.data.filter(r => r.sender_id === student.id);
+    const recv = res.data.filter(r => r.receiver_id === student.id);
+    document.getElementById('ps-sent').textContent = sent.length;
+    document.getElementById('ps-recv').textContent = recv.length;
+
+    el.innerHTML = res.data.slice(0,6).map(r => {
+        const isOut = r.sender_id === student.id;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;
+                            padding:10px 0;border-bottom:1px solid var(--border);">
+            <div style="font-size:0.875rem;">
+                ${isOut ? `You → <strong>${r.receiver_name}</strong>` : `<strong>${r.sender_name}</strong> → You`}
+                <span style="color:var(--text-muted);"> for ${r.skill_name}</span>
+            </div>
+            <span class="badge badge-${r.status}">${r.status}</span>
+        </div>`;
+    }).join('');
+}
+
+// ── Edit Profile ──────────────────────────────────────────────
+function toggleEdit() {
+    document.getElementById('edit-form').classList.toggle('active');
+}
+
+async function saveProfile() {
+    const payload = {
+        name:       document.getElementById('edit-name').value,
+        department: document.getElementById('edit-dept').value,
+        year:       parseInt(document.getElementById('edit-year').value)
+    };
+    const res = await Students.update(student.id, payload);
+    if (res.ok) {
+        setCurrentStudent({ ...student, ...payload });
+        showAlert(document.getElementById('alert-box'), 'Profile updated!', 'success');
+        toggleEdit();
+        await loadProfile();
+        renderNavUser();
+    } else {
+        showAlert(document.getElementById('alert-box'), 'Update failed', 'error');
+    }
+}
+
+// ── Bio ───────────────────────────────────────────────────────
+function toggleBioEdit() {
+    const editArea   = document.getElementById('bio-edit-area');
+    const displayDiv = document.getElementById('bio-display');
+    const btn        = document.getElementById('bio-edit-btn');
+    const isEditing  = editArea.style.display !== 'none';
+
+    if (isEditing) {
+        cancelBioEdit();
+    } else {
+        displayDiv.style.display = 'none';
+        editArea.style.display   = 'block';
+        btn.textContent = '✕ Cancel';
+        document.getElementById('bio-input').focus();
+    }
+}
+
+function cancelBioEdit() {
+    document.getElementById('bio-edit-area').style.display   = 'none';
+    document.getElementById('bio-display').style.display     = 'block';
+    document.getElementById('bio-edit-btn').textContent = '✏️ Edit';
+}
+
+function updateBioCounter() {
+    const text  = document.getElementById('bio-input').value.trim();
+    const words = text ? text.split(/\s+/).filter(w => w).length : 0;
+    const counter = document.getElementById('bio-count');
+    counter.textContent = words;
+    counter.style.color = words > 200 ? 'var(--danger)' : words > 180 ? '#f9ab00' : 'var(--text-muted)';
+}
+
+async function saveBio() {
+    const text  = document.getElementById('bio-input').value.trim();
+    const words = text.split(/\s+/).filter(w => w).length;
+
+    if (words > 200) {
+        showAlert(document.getElementById('alert-box'), 'Bio exceeds 200 words. Please shorten it.', 'error');
+        return;
+    }
+
+    const res = await apiFetch(`/students/${student.id}/bio`, {
+        method: 'PUT', body: JSON.stringify({ bio: text })
+    });
+
+    if (res.ok) {
+        const bioEl = document.getElementById('bio-text');
+        bioEl.innerHTML = text || '<span class="bio-placeholder">No bio yet.</span>';
+        cancelBioEdit();
+        showAlert(document.getElementById('alert-box'), 'Bio saved!', 'success');
+    } else {
+        showAlert(document.getElementById('alert-box'), 'Failed to save bio', 'error');
+    }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadProfile();
+loadActivity();
+</script>
+</body>
+</html>

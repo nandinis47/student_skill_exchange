@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Students - Student Skills Exchange</title>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <style>
+        .search-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .search-controls .form-group {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .results-count {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        /* Modal styles */
+        .profile-modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .profile-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .profile-modal-header .big-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), #4285f4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .request-form {
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="dashboard.html" class="navbar-brand">
+            <div class="logo-icon">🎓</div>
+            Skills Exchange
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+            <li><a href="skills.html" data-page="skills">⚡ My Skills</a></li>
+            <li><a href="search.html" data-page="search">🔍 Search</a></li>
+            <li><a href="requests.html" data-page="requests">🔄 Requests</a></li>
+            <li><a href="messages.html" data-page="messages">💬 Messages</a></li>
+            <li><a href="profile.html" data-page="profile">👤 Profile</a></li>
+        </ul>
+        <div class="navbar-user">
+            <div class="user-avatar" id="nav-avatar">?</div>
+            <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
+            <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>🔍 Search Students</h1>
+            <p>Find students by the skills they can teach or want to learn</p>
+        </div>
+
+        <div id="alert-box"></div>
+
+        <!-- Search Controls -->
+        <div class="search-section">
+            <div class="search-controls">
+                <div class="form-group" style="flex:2;">
+                    <label>Search by Skill</label>
+                    <input type="text" class="form-control" id="search-input"
+                           placeholder="e.g. Python, React, Machine Learning..."
+                           onkeyup="if(event.key==='Enter') doSearch()">
+                </div>
+                <div class="form-group">
+                    <label>Filter by</label>
+                    <select class="form-control" id="search-type">
+                        <option value="teach">Can Teach</option>
+                        <option value="learn">Wants to Learn</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="doSearch()" style="margin-bottom:0;">
+                    🔍 Search
+                </button>
+                <button class="btn btn-secondary" onclick="loadAll()" style="margin-bottom:0;">
+                    Show All
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-header">
+            <div class="section-title" style="margin-bottom:0;">Students</div>
+            <div class="results-count" id="results-count"></div>
+        </div>
+        <div id="results-container">
+            <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+    </div>
+
+    <!-- Student Profile Modal -->
+    <div class="modal-overlay" id="student-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Student Profile</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="profile-modal-body" id="modal-body">
+                <div class="loading-overlay"><div class="spinner"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js?v=2.0"></script>
+    <script>
+        requireAuth();
+        renderNavUser();
+        setActiveNav('search');
+
+        const student = getCurrentStudent();
+        let allSkills = [];
+
+        Skills.getAll().then(res => {
+            if (res.ok) allSkills = res.data;
+        });
+
+        async function loadAll() {
+            document.getElementById('search-input').value = '';
+            const res = await Students.getAll();
+            if (res.ok) {
+                renderResults(res.data.filter(s => s.id !== student.id));
+            }
+        }
+
+        async function doSearch() {
+            const skill = document.getElementById('search-input').value.trim();
+            const type  = document.getElementById('search-type').value;
+
+            if (!skill) { loadAll(); return; }
+
+            const res = await Skills.search(skill, type);
+            if (res.ok) {
+                const filtered = res.data.filter(s => s.id !== student.id);
+                renderResults(filtered, true);
+            }
+        }
+
+        function renderResults(students, isSearch = false) {
+            const container = document.getElementById('results-container');
+            const countEl   = document.getElementById('results-count');
+            countEl.textContent = `${students.length} student${students.length !== 1 ? 's' : ''} found`;
+
+            if (!students.length) {
+                container.innerHTML = `<div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No students found</h3>
+                    <p>${isSearch ? 'Try a different skill name' : 'No other students registered yet'}</p>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = `<div class="students-grid">
+                ${students.map(s => `
+                    <div class="student-card" onclick="openStudentModal(${s.id})">
+                        <div class="student-card-header">
+                            <div class="student-avatar">${getInitials(s.name)}</div>
+                            <div class="student-info">
+                                <h4>${s.name}</h4>
+                                <p>${s.department || 'N/A'} • Year ${s.year || '?'}</p>
+                            </div>
+                        </div>
+                        ${s.teaches ? `
+                        <div class="skills-section">
+                            <div class="skills-section-label">Teaches</div>
+                            <div>${s.teaches.split(', ').map(sk =>
+                                `<span class="skill-tag">⚡ ${sk}</span>`).join('')}</div>
+                        </div>` : ''}
+                        ${s.learns ? `
+                        <div class="skills-section" style="margin-top:8px;">
+                            <div class="skills-section-label">Wants to Learn</div>
+                            <div>${s.learns.split(', ').map(sk =>
+                                `<span class="skill-tag" style="background:#e6f4ea;color:#137333;">📚 ${sk}</span>`).join('')}</div>
+                        </div>` : ''}
+                        <div style="margin-top:12px;">
+                            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openStudentModal(${s.id})">
+                                View Profile & Request
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        async function openStudentModal(id) {
+            document.getElementById('student-modal').classList.add('active');
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = '<div class="loading-overlay"><div class="spinner"></div></div>';
+
+            const res = await Students.getById(id);
+            if (!res.ok) {
+                modalBody.innerHTML = '<p>Failed to load profile</p>';
+                return;
+            }
+
+            const s = res.data;
+            const teaches = s.skills.filter(sk => sk.type === 'teach');
+            const learns  = s.skills.filter(sk => sk.type === 'learn');
+
+            modalBody.innerHTML = `
+                <div class="profile-modal-header">
+                    <div class="big-avatar">${getInitials(s.name)}</div>
+                    <div>
+                        <h3 style="font-size:1.1rem;">${s.name}</h3>
+                        <p style="color:var(--text-muted);font-size:0.875rem;">${s.email}</p>
+                        <p style="color:var(--text-muted);font-size:0.8rem;">${s.department} • Year ${s.year}</p>
+                    </div>
+                </div>
+
+                ${teaches.length ? `
+                <div>
+                    <div class="skills-section-label">Can Teach</div>
+                    <div>${teaches.map(sk => `<span class="skill-tag">⚡ ${sk.skill_name}</span>`).join('')}</div>
+                </div>` : ''}
+
+                ${learns.length ? `
+                <div>
+                    <div class="skills-section-label">Wants to Learn</div>
+                    <div>${learns.map(sk => `<span class="skill-tag" style="background:#e6f4ea;color:#137333;">📚 ${sk.skill_name}</span>`).join('')}</div>
+                </div>` : ''}
+
+                <div class="request-form">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label>Send Exchange Request for Skill:</label>
+                        <select class="form-control" id="req-skill-id">
+                            <option value="">Select skill...</option>
+                            ${teaches.map(sk => `<option value="${sk.skill_id}">${sk.skill_name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-primary" onclick="sendRequest(${s.id})">
+                            🔄 Send Request
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.location.href='messages.html?to=${s.id}&name=${encodeURIComponent(s.name)}'">
+                            💬 Message
+                        </button>
+                    </div>
+                    <div id="req-alert" style="margin-top:10px;"></div>
+                </div>
+            `;
+        }
+
+        async function sendRequest(receiver_id) {
+            const skill_id = document.getElementById('req-skill-id').value;
+            const alertEl  = document.getElementById('req-alert');
+
+            if (!skill_id) {
+                showAlert(alertEl, 'Please select a skill', 'error');
+                return;
+            }
+
+            const res = await Requests.send(student.id, receiver_id, skill_id);
+            if (res.ok) {
+                showAlert(alertEl, 'Exchange request sent!', 'success');
+            } else {
+                showAlert(alertEl, res.data.error || 'Failed to send request', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('student-modal').classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('student-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Load all students on page load
+        loadAll();
+    </script>
+</body>
+</html>

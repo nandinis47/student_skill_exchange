@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Skills Exchange</title>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <link rel="stylesheet" href="css/dashboard.css?v=2.0">
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> Skills Exchange
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-avatar" id="nav-avatar" onclick="location.href='profile.html'">?</div>
+        <span id="nav-user-name"></span>
+        <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container">
+
+<!-- ── ROW 1: WELCOME BANNER + TODAY'S FOCUS ── -->
+<div class="top-row">
+    <div class="welcome-banner">
+        <div class="wb-left">
+            <div class="wb-avatar" id="wb-avatar">?</div>
+            <div>
+                <h2>Hey, <span id="welcome-name">Student</span>! 👋</h2>
+                <p id="welcome-dept"></p>
+                <div class="xp-bar-wrap">
+                    <div class="xp-bar-track"><div class="xp-bar-fill" id="xp-fill"></div></div>
+                    <span class="xp-label" id="xp-label">0 XP</span>
+                </div>
+            </div>
+        </div>
+        <div class="wb-right">
+            <div class="streak-box">
+                <span class="streak-fire">🔥</span>
+                <span class="streak-num" id="streak-num">0</span>
+                <span class="streak-text">day streak</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="today-focus card">
+        <div class="card-title">🎯 Today's Focus</div>
+        <div class="focus-goal" id="focus-goal">Loading...</div>
+        <div class="focus-meta" id="focus-meta"></div>
+        <div class="focus-actions">
+            <button class="btn btn-primary btn-sm" onclick="markFocusDone()">✅ Done for Today</button>
+            <a href="skills.html" class="btn btn-secondary btn-sm">📚 Add Skills</a>
+        </div>
+    </div>
+</div>
+
+<!-- ── ROW 2: STATS ── -->
+<div class="grid-4 stats-row">
+    <div class="stat-card"><div class="stat-icon blue">👥</div>
+        <div class="stat-info"><h3 id="stat-students">-</h3><p>Total Students</p></div></div>
+    <div class="stat-card"><div class="stat-icon green">⚡</div>
+        <div class="stat-info"><h3 id="stat-skills">-</h3><p>Skills Available</p></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">🔄</div>
+        <div class="stat-info"><h3 id="stat-exchanges">-</h3><p>My Exchanges</p></div></div>
+    <div class="stat-card"><div class="stat-icon red">⏱️</div>
+        <div class="stat-info"><h3 id="stat-hours">-</h3><p>Hours Learned</p></div></div>
+</div>
+
+<!-- ── ROW 3: SKILL JOURNEY ── -->
+<div class="card journey-card">
+    <div class="card-title">🗺️ Your Skill Journey</div>
+    <div class="journey-track">
+        <div class="journey-step active"><div class="js-icon">📖</div><span>Learning</span></div>
+        <div class="journey-arrow">→</div>
+        <div class="journey-step" id="js-practicing"><div class="js-icon">🔨</div><span>Practicing</span></div>
+        <div class="journey-arrow">→</div>
+        <div class="journey-step" id="js-teaching"><div class="js-icon">🎓</div><span>Teaching</span></div>
+        <div class="journey-arrow">→</div>
+        <div class="journey-step" id="js-exchanging"><div class="js-icon">🤝</div><span>Exchanging</span></div>
+        <div class="journey-arrow">→</div>
+        <div class="journey-step" id="js-mastery"><div class="js-icon">🏆</div><span>Mastery</span></div>
+    </div>
+</div>
+
+<!-- ── ROW 4: SKILL PROGRESS + SMART MATCHES ── -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title">📈 Skill Progress</div>
+        <div id="skill-progress-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+        <a href="skills.html" class="btn btn-outline btn-sm" style="margin-top:14px;">Manage Skills →</a>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🤝 Smart Matches For You</div>
+        <div id="smart-matches-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+        <a href="search.html" class="btn btn-outline btn-sm" style="margin-top:14px;">Find More →</a>
+    </div>
+</div>
+
+<!-- ── ROW 5: SKILL OF THE DAY + RECOMMENDED ── -->
+<div class="grid-2" style="margin-top:20px;">
+    <div class="skill-of-day-card card">
+        <div class="sod-header">
+            <div class="sod-pulse"></div>
+            <span class="sod-label">💡 Skill of the Day</span>
+        </div>
+        <div class="sod-skill" id="sod-skill">Loading...</div>
+        <div class="sod-meta" id="sod-meta"></div>
+        <a href="search.html" class="btn btn-primary btn-sm" id="sod-btn">Explore Skill →</a>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🎯 Recommended For You</div>
+        <div id="recommended-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+    </div>
+</div>
+
+<!-- ── ROW 6: SKILL EXCHANGE MAP ── -->
+<div class="card" style="margin-top:20px;">
+    <div class="card-title">🗺️ Your Skill Exchange Map</div>
+    <div class="exchange-map" id="exchange-map">
+        <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+</div>
+
+<!-- ── ROW 7: UPCOMING SESSIONS + ANALYTICS ── -->
+<div class="grid-2" style="margin-top:20px;">
+    <div class="card">
+        <div class="card-title" style="justify-content:space-between;">
+            <span>📅 Upcoming Sessions</span>
+            <button class="btn btn-secondary btn-sm" onclick="openScheduleModal()">+ Schedule</button>
+        </div>
+        <div id="sessions-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📊 Weekly Activity</div>
+        <div class="weekly-chart" id="weekly-chart"></div>
+        <div class="analytics-mini" id="analytics-mini"></div>
+    </div>
+</div>
+
+<!-- ── ROW 8: BADGES + LEADERBOARD ── -->
+<div class="grid-2" style="margin-top:20px;">
+    <div class="card">
+        <div class="card-title">🏅 My Badges</div>
+        <div class="badges-grid" id="badges-grid">
+            <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🏆 Leaderboard</div>
+        <div id="leaderboard-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+    </div>
+</div>
+
+<!-- ── ROW 9: RECENT REQUESTS ── -->
+<div class="card" style="margin-top:20px;">
+    <div class="card-title" style="justify-content:space-between;">
+        <span>🔄 Recent Exchange Requests</span>
+        <a href="requests.html" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    <div id="recent-requests"><div class="loading-overlay"><div class="spinner"></div></div></div>
+</div>
+
+</div><!-- /container -->
+
+<!-- Schedule Session Modal -->
+<div class="modal-overlay" id="schedule-modal">
+  <div class="modal">
+    <div class="modal-header">
+        <h3>📅 Schedule a Session</h3>
+        <button class="modal-close" onclick="closeScheduleModal()">✕</button>
+    </div>
+    <div class="form-group">
+        <label>Skill</label>
+        <select class="form-control" id="sess-skill"></select>
+    </div>
+    <div class="form-group">
+        <label>Partner (optional)</label>
+        <select class="form-control" id="sess-partner">
+            <option value="">Solo session</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Date & Time</label>
+        <input type="datetime-local" class="form-control" id="sess-datetime">
+    </div>
+    <div class="form-group">
+        <label>Duration (minutes)</label>
+        <select class="form-control" id="sess-duration">
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60" selected>60 min</option>
+            <option value="90">90 min</option>
+        </select>
+    </div>
+    <div id="sess-alert"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="saveSession()">
+        Schedule Session
+    </button>
+  </div>
+</div>
+
+<!-- Floating SkillBot -->
+<div class="skillbot-fab" id="skillbot-fab" onclick="toggleSkillBot()">🤖</div>
+<div class="skillbot-panel" id="skillbot-panel">
+    <div class="skillbot-header">
+        <span>🤖 SkillBot Assistant</span>
+        <button onclick="toggleSkillBot()" style="background:none;border:none;color:white;cursor:pointer;font-size:1.1rem;">✕</button>
+    </div>
+    <div class="skillbot-messages" id="bot-messages">
+        <div class="bot-msg">Hi! I'm SkillBot 👋 Ask me anything about skills, partners, or your learning plan!</div>
+    </div>
+    <div class="skillbot-input">
+        <input type="text" id="bot-input" placeholder="Ask SkillBot..." onkeyup="if(event.key==='Enter')sendBotMsg()">
+        <button onclick="sendBotMsg()">➤</button>
+    </div>
+</div>
+
+<script src="js/api.js?v=2.0"></script>
+<script src="js/dashboard.js?v=2.0"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages - Student Skills Exchange</title>
+<link rel="stylesheet" href="css/style.css?v=2.0">
+<link rel="stylesheet" href="css/messages.css?v=2.0">
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand"><div class="logo-icon">🎓</div> Skills Exchange</a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-avatar" id="nav-avatar">?</div>
+        <span id="nav-user-name"></span>
+        <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="msg-layout">
+<!-- ═══ LEFT SIDEBAR ═══ -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <span>💬 Chats</span>
+        <div class="unread-total" id="unread-total" style="display:none;"></div>
+    </div>
+    <div class="sidebar-search">
+        <input type="text" id="contact-search" placeholder="🔍 Search conversations..." oninput="filterContacts()">
+    </div>
+    <div class="contacts-list" id="contacts-list">
+        <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+    <div class="new-chat-section">
+        <select class="form-control" id="new-chat-select" style="font-size:0.8rem; margin-bottom:6px;"></select>
+        <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="startNewChat()">
+            + New Chat
+        </button>
+    </div>
+</div>
+
+<!-- ═══ MAIN PANEL ═══ -->
+<div class="main-panel">
+
+    <!-- Empty state -->
+    <div class="no-chat" id="no-chat">
+        <div style="font-size:4rem;opacity:0.3;">💬</div>
+        <h3>Select a conversation</h3>
+        <p>Choose someone from the left to start chatting</p>
+    </div>
+
+    <!-- Active chat -->
+    <div class="chat-wrapper" id="chat-wrapper" style="display:none;">
+
+        <!-- Chat header -->
+        <div class="chat-hdr">
+            <div class="chat-hdr-left">
+                <div class="chat-avatar" id="ch-avatar"></div>
+                <div>
+                    <div class="chat-hdr-name" id="ch-name"></div>
+                    <div class="chat-hdr-status" id="ch-status">
+                        <span class="status-dot offline" id="status-dot"></span>
+                        <span id="status-text">Offline</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-hdr-actions">
+                <button class="hdr-btn" onclick="showTab('chat')"    id="tab-chat-btn"    title="Chat">💬</button>
+                <button class="hdr-btn" onclick="showTab('content')" id="tab-content-btn" title="Shared Content">📁</button>
+            </div>
+        </div>
+
+        <!-- ── TAB: CHAT ── -->
+        <div id="tab-chat" class="tab-body">
+            <div class="chat-msgs" id="chat-msgs"></div>
+            <div class="typing-indicator" id="typing-ind" style="display:none;">
+                <span id="typing-name"></span> is typing<span class="typing-dots"><span></span><span></span><span></span></span>
+            </div>
+            <div class="chat-input-bar">
+                <button class="attach-btn" onclick="toggleAttachMenu()" title="Share content">📎</button>
+                <div class="attach-menu" id="attach-menu" style="display:none;">
+                    <button onclick="openShareModal('media')">🎬 Media</button>
+                    <button onclick="openShareModal('document')">📄 Document</button>
+                    <button onclick="openShareModal('link')">🔗 Link</button>
+                </div>
+                <input type="text" id="msg-input" class="msg-input" placeholder="Type a message..."
+                       oninput="onTyping()" onkeyup="if(event.key==='Enter')sendMsg()">
+                <button class="send-btn" onclick="sendMsg()">➤</button>
+            </div>
+        </div>
+
+        <!-- ── TAB: SHARED CONTENT ── -->
+        <div id="tab-content" class="tab-body" style="display:none;">
+            <div class="content-tabs">
+                <button class="ctab active" onclick="switchContentTab('media',this)">🎬 Media</button>
+                <button class="ctab" onclick="switchContentTab('document',this)">📄 Documents</button>
+                <button class="ctab" onclick="switchContentTab('link',this)">🔗 Links</button>
+            </div>
+            <div class="content-list" id="content-list">
+                <div class="loading-overlay"><div class="spinner"></div></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+
+<!-- ═══ SHARE CONTENT MODAL ═══ -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+        <h3 id="share-modal-title">Share Content</h3>
+        <button class="modal-close" onclick="closeShareModal()">✕</button>
+    </div>
+    <div id="share-fields"></div>
+    <div id="share-alert"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px;" onclick="submitShare()">
+        Share →
+    </button>
+  </div>
+</div>
+
+<script src="js/api.js?v=2.0"></script>
+<script src="js/messages.js?v=2.0"></script>
+</body>
+</html>

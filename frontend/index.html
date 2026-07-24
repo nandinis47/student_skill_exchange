@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Skills Exchange - Login</title>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .auth-logo {
+            text-align: center;
+        }
+
+        .auth-logo .logo-circle {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.8rem;
+        }
+
+        .auth-logo h1 {
+            font-size: 1.4rem;
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+
+        .auth-logo p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+
+        .tab-switcher {
+            display: flex;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .divider {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 42%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after  { right: 0; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        #alert-box { min-height: 20px; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-logo">
+            <div class="logo-circle">🎓</div>
+            <h1>Skills Exchange</h1>
+            <p>Connect. Learn. Teach. Grow.</p>
+        </div>
+
+        <div id="alert-box"></div>
+
+        <div class="tab-switcher">
+            <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+            <button class="tab-btn" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="tab-login" class="tab-content active">
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" id="login-email"
+                           placeholder="your@college.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="login-password"
+                           placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                    Login →
+                </button>
+            </form>
+            <div class="divider">or try demo</div>
+            <button class="btn btn-secondary" style="width:100%; justify-content:center;"
+                    onclick="fillDemo()">
+                Use Demo Account
+            </button>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div id="tab-register" class="tab-content">
+            <form id="register-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" class="form-control" id="reg-name"
+                           placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" id="reg-email"
+                           placeholder="your@college.edu" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="reg-password"
+                           placeholder="Create a password" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="form-control" id="reg-dept" required>
+                            <option value="">Select</option>
+                            <option>Computer Science</option>
+                            <option>Information Technology</option>
+                            <option>Electronics</option>
+                            <option>Mechanical</option>
+                            <option>Civil</option>
+                            <option>Data Science</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <select class="form-control" id="reg-year" required>
+                            <option value="">Year</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                    Create Account →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js?v=2.0"></script>
+    <script>
+        // Redirect if already logged in
+        if (getCurrentStudent()) {
+            window.location.href = 'dashboard.html';
+        }
+
+        // If opened as file://, redirect to http://localhost:8080
+        if (window.location.protocol === 'file:') {
+            document.body.innerHTML = `
+            <div style="font-family:Segoe UI,sans-serif;display:flex;align-items:center;
+                        justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a73e8,#0d47a1);padding:20px;">
+              <div style="background:white;border-radius:16px;padding:40px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="font-size:2.5rem;margin-bottom:16px;">⚠️</div>
+                <h2 style="color:#1a73e8;margin-bottom:12px;">Wrong way to open!</h2>
+                <p style="color:#5f6368;margin-bottom:24px;line-height:1.6;">
+                  You opened the file directly. The app must be opened via a local server or it can't connect to the backend.
+                </p>
+                <p style="color:#5f6368;margin-bottom:24px;font-size:0.9rem;">
+                  <b>Option 1:</b> Double-click <b>LAUNCH APP.bat</b> in the project folder.<br><br>
+                  <b>Option 2:</b> Click the button below (if backend is already running).
+                </p>
+                <a href="http://localhost:8080/index.html"
+                   style="display:inline-block;background:#1a73e8;color:white;padding:12px 28px;
+                          border-radius:8px;text-decoration:none;font-weight:600;font-size:1rem;">
+                  Open Correctly →
+                </a>
+              </div>
+            </div>`;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach((b, i) => {
+                b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+            });
+            document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+            document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+            document.getElementById('alert-box').innerHTML = '';
+        }
+
+        function fillDemo() {
+            document.getElementById('login-email').value = 'aarav@college.edu';
+            document.getElementById('login-password').value = 'pass123';
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const alertBox = document.getElementById('alert-box');
+
+            const btn = e.target.querySelector('button[type=submit]');
+            btn.textContent = 'Logging in...';
+            btn.disabled = true;
+
+            const res = await Auth.login(email, password);
+            btn.textContent = 'Login →';
+            btn.disabled = false;
+
+            if (res.ok) {
+                setCurrentStudent(res.data.student);
+                window.location.href = 'dashboard.html';
+            } else {
+                showAlert(alertBox, res.data.error || 'Login failed', 'error');
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById('alert-box');
+            const payload = {
+                name: document.getElementById('reg-name').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value,
+                department: document.getElementById('reg-dept').value,
+                year: parseInt(document.getElementById('reg-year').value)
+            };
+
+            const btn = e.target.querySelector('button[type=submit]');
+            btn.textContent = 'Creating...';
+            btn.disabled = true;
+
+            const res = await Auth.register(payload);
+            btn.textContent = 'Create Account →';
+            btn.disabled = false;
+
+            if (res.ok) {
+                showAlert(alertBox, 'Account created! Please login.', 'success');
+                switchTab('login');
+                document.getElementById('login-email').value = payload.email;
+            } else {
+                showAlert(alertBox, res.data.error || 'Registration failed', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
