@@ -45,8 +45,57 @@
 .profile-stat h4 { font-size:1.2rem; font-weight:700; color:var(--primary); }
 .profile-stat p  { font-size:0.72rem; color:var(--text-muted); }
 
-/* Bio */
-.bio-display { 
+/* Profile picture wrap */
+.profile-pic-wrap {
+    position: relative; width: 80px; height: 80px;
+    margin: -40px auto 12px; cursor: pointer;
+}
+.profile-big-avatar {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg,var(--primary),#4285f4);
+    border-radius: 50%; border: 4px solid white;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.8rem; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(26,115,232,0.3);
+    overflow: hidden;
+}
+.profile-big-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.pic-overlay {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: rgba(0,0,0,0.45); display: flex;
+    align-items: center; justify-content: center;
+    color: white; font-size: 1.2rem;
+    opacity: 0; transition: opacity 0.2s;
+}
+.profile-pic-wrap:hover .pic-overlay { opacity: 1; }
+
+/* Pic menu */
+.pic-menu {
+    position: absolute; top: 90px; left: 50%;
+    transform: translateX(-50%);
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    z-index: 200; overflow: hidden; min-width: 190px;
+}
+.pic-menu button {
+    display: block; width: 100%; text-align: left;
+    padding: 11px 16px; border: none; background: none;
+    cursor: pointer; font-size: 0.875rem; color: var(--text-dark);
+    transition: background 0.15s; border-bottom: 1px solid var(--border);
+}
+.pic-menu button:last-child { border-bottom: none; }
+.pic-menu button:hover { background: var(--bg); }
+
+/* Avatar picker modal */
+.avatar-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; padding: 8px 0; }
+.avatar-opt {
+    width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; cursor: pointer; transition: all 0.2s;
+    background: var(--bg);
+}
+.avatar-opt:hover { border-color: var(--primary); transform: scale(1.1); background: var(--primary-light); }
+.avatar-opt.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,115,232,0.2); } 
     background:var(--bg); border-radius:var(--radius-sm); padding:12px 14px;
     font-size:0.875rem; color:var(--text-dark); line-height:1.6;
     border:1px solid var(--border); min-height:60px;
@@ -109,7 +158,33 @@
             <div class="profile-card">
                 <div class="profile-card-banner"></div>
                 <div class="profile-card-body">
-                    <div class="profile-big-avatar" id="p-avatar">?</div>
+                    <!-- Profile picture with upload -->
+                    <div class="profile-pic-wrap" onclick="openPicMenu()">
+                        <div class="profile-big-avatar" id="p-avatar">?</div>
+                        <div class="pic-overlay">📷</div>
+                    </div>
+
+                    <!-- Hidden file input -->
+                    <input type="file" id="pic-file-input" accept="image/jpeg,image/png,image/webp"
+                           style="display:none;" onchange="handlePicUpload(this)">
+
+                    <!-- Pic menu popup -->
+                    <div class="pic-menu" id="pic-menu" style="display:none;">
+                        <button onclick="document.getElementById('pic-file-input').click();closePicMenu()">📷 Upload Photo</button>
+                        <button onclick="openAvatarPicker()">🎨 Choose Avatar</button>
+                        <button onclick="viewFullPic()">🔍 View Full Image</button>
+                        <button onclick="removePic()" style="color:var(--danger);">🗑️ Remove Photo</button>
+                        <button onclick="closePicMenu()">✕ Cancel</button>
+                    </div>
+
+                    <!-- Upload progress -->
+                    <div id="upload-progress" style="display:none;margin-bottom:10px;">
+                        <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+                            <div id="upload-bar" style="height:100%;background:var(--primary);width:0%;transition:width 0.3s;border-radius:2px;"></div>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:3px;" id="upload-status">Uploading…</div>
+                    </div>
+
                     <div class="profile-name"  id="p-name">Loading...</div>
                     <div class="profile-email" id="p-email"></div>
                     <div class="profile-meta">
@@ -230,13 +305,75 @@
     </div>
 </div>
 
+<!-- Avatar picker modal -->
+<div class="modal-overlay" id="avatar-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><h3>🎨 Choose Avatar</h3>
+        <button class="modal-close" onclick="document.getElementById('avatar-modal').classList.remove('active')">✕</button></div>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Pick a fun avatar to represent you</p>
+    <div class="avatar-grid" id="avatar-grid"></div>
+  </div>
+</div>
+
 <script src="js/api.js?v=2.0"></script>
 <script>
-requireAuth();
-renderNavUser();
-setActiveNav('profile');
-
+requireAuth(); renderNavUser(); setActiveNav('profile');
 const student = getCurrentStudent();
+
+const AVATARS = ['🧑‍💻','👩‍💻','🧑‍🎓','👩‍🎓','🧑‍🏫','👩‍🏫','🧑‍🔬','👩‍🔬','🧑‍🎨','👩‍🎨',
+                 '🧙','🧝','🧚','🧜','🦸','🦹','🥷','👨‍🚀','👩‍🚀','🤖',
+                 '🐱','🐶','🦊','🐼','🦁','🐯','🐸','🐧','🦋','⭐'];
+
+function openPicMenu() { const m=document.getElementById('pic-menu'); m.style.display=m.style.display==='none'?'block':'none'; }
+function closePicMenu() { document.getElementById('pic-menu').style.display='none'; }
+
+async function handlePicUpload(input) {
+    const file=input.files[0]; if (!file) return;
+    if (file.size>5*1024*1024){showAlert(document.getElementById('alert-box'),'Max 5MB','error');return;}
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)){showAlert(document.getElementById('alert-box'),'Only JPG/PNG/WebP','error');return;}
+    const prog=document.getElementById('upload-progress'),bar=document.getElementById('upload-bar'),stat=document.getElementById('upload-status');
+    prog.style.display='block'; bar.style.width='40%'; stat.textContent='Uploading…';
+    const reader=new FileReader();
+    reader.onload=async(e)=>{
+        bar.style.width='70%';
+        const res=await apiFetch(`/profile-pic/${student.id}`,{method:'POST',body:JSON.stringify({image_b64:e.target.result})});
+        if (res.ok){
+            bar.style.width='100%'; stat.textContent='✅ Done!';
+            setTimeout(()=>{prog.style.display='none';bar.style.width='0%';},1500);
+            document.getElementById('p-avatar').innerHTML=`<img src="${res.data.url}" alt="Profile">`;
+            showAlert(document.getElementById('alert-box'),'Profile picture updated!','success');
+        } else { prog.style.display='none'; showAlert(document.getElementById('alert-box'),res.data.error||'Failed','error'); }
+    };
+    reader.readAsDataURL(file); input.value='';
+}
+async function removePic() {
+    closePicMenu();
+    await apiFetch(`/profile-pic/${student.id}`,{method:'DELETE'});
+    document.getElementById('p-avatar').textContent=getInitials(student.name);
+    showAlert(document.getElementById('alert-box'),'Removed','info');
+}
+function viewFullPic() {
+    closePicMenu();
+    const img=document.getElementById('p-avatar').querySelector('img');
+    if (img){const w=window.open();w.document.write(`<img src="${img.src}" style="max-width:100%;max-height:100vh;">`);}
+}
+function openAvatarPicker() {
+    closePicMenu();
+    document.getElementById('avatar-modal').classList.add('active');
+    document.getElementById('avatar-grid').innerHTML=AVATARS.map(a=>`<div class="avatar-opt" onclick="selectAvatar('${a}',this)">${a}</div>`).join('');
+}
+async function selectAvatar(key,el) {
+    document.querySelectorAll('.avatar-opt').forEach(x=>x.classList.remove('selected'));
+    el.classList.add('selected');
+    await apiFetch(`/avatar/${student.id}`,{method:'PUT',body:JSON.stringify({avatar_key:key})});
+    document.getElementById('p-avatar').innerHTML=`<span style="font-size:2.5rem;">${key}</span>`;
+    showAlert(document.getElementById('alert-box'),'Avatar updated!','success');
+    setTimeout(()=>document.getElementById('avatar-modal').classList.remove('active'),800);
+}
+document.addEventListener('click',e=>{
+    if (!e.target.closest('.profile-pic-wrap')&&!e.target.closest('.pic-menu'))
+        document.getElementById('pic-menu').style.display='none';
+});
 
 const ALL_BADGES = [
     { name:'Newbie',          icon:'🌱',  desc:'Welcome to Skills Exchange!' },

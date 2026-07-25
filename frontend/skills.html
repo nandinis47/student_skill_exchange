@@ -1,264 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Skills - Student Skills Exchange</title>
-    <link rel="stylesheet" href="css/style.css?v=2.0">
-    <style>
-        .skills-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 24px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Skills - Student Skills Exchange</title>
+<link rel="stylesheet" href="css/style.css?v=2.0">
+<style>
+.skills-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:600px){.skills-layout{grid-template-columns:1fr;}}
 
-        .skill-list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            margin-bottom: 8px;
-            transition: all 0.2s;
-        }
+.skill-list-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:var(--bg); border-radius:var(--radius-sm);
+    border:1px solid var(--border); margin-bottom:8px; transition:all 0.2s;
+}
+.skill-list-item:hover { border-color:var(--primary); background:var(--primary-light); }
+.skill-list-item-left  { display:flex; align-items:center; gap:8px; font-size:0.875rem; font-weight:500; }
+.skill-domain-chip {
+    font-size:0.68rem; background:var(--bg); border:1px solid var(--border);
+    padding:1px 7px; border-radius:10px; color:var(--text-muted); margin-left:4px;
+}
 
-        .skill-list-item:hover {
-            border-color: var(--primary);
-            background: var(--primary-light);
-        }
+/* Domain dropdown card */
+.domain-card {
+    background: linear-gradient(135deg,#e8f0fe,#f0f4ff);
+    border:1px solid #c5d8fd; border-radius:var(--radius);
+    padding:20px 24px; margin-bottom:20px;
+}
+.domain-card h3 { font-size:1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+.domain-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.domain-row .form-group { margin-bottom:0; flex:1; min-width:160px; }
+.domain-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:600; border:1px solid var(--border); background:white; margin:3px; cursor:pointer; transition:all 0.2s; }
+.domain-badge:hover { border-color:var(--primary); background:var(--primary-light); color:var(--primary); }
+.domain-badge.selected { background:var(--primary); color:white; border-color:var(--primary); }
 
-        .skill-list-item-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .add-skill-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .add-skill-form select,
-        .add-skill-form input {
-            flex: 1;
-        }
-
-        .new-skill-section {
-            border-top: 1px solid var(--border);
-            padding-top: 16px;
-            margin-top: 16px;
-        }
-
-        .new-skill-section label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        @media (max-width: 600px) {
-            .skills-columns { grid-template-columns: 1fr; }
-        }
-    </style>
+/* Add domain panel */
+.add-domain-panel { margin-top:12px; padding:14px; background:white; border-radius:var(--radius-sm); border:1px solid var(--border); display:none; }
+.add-domain-panel.open { display:block; }
+.validation-msg { font-size:0.8rem; margin-top:4px; display:none; }
+.validation-msg.error { color:var(--danger); display:block; }
+.validation-msg.success { color:var(--secondary); display:block; }
+</style>
 </head>
 <body>
-    <nav class="navbar">
-        <a href="dashboard.html" class="navbar-brand">
-            <div class="logo-icon">🎓</div>
-            Skills Exchange
-        </a>
-        <ul class="navbar-nav">
-            <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
-            <li><a href="skills.html" data-page="skills">⚡ My Skills</a></li>
-            <li><a href="search.html" data-page="search">🔍 Search</a></li>
-            <li><a href="requests.html" data-page="requests">🔄 Requests</a></li>
-            <li><a href="messages.html" data-page="messages">💬 Messages</a></li>
-            <li><a href="profile.html" data-page="profile">👤 Profile</a></li>
-        </ul>
-        <div class="navbar-user">
-            <div class="user-avatar" id="nav-avatar">?</div>
-            <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
-            <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand"><div class="logo-icon">🎓</div> Skills Exchange</a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-avatar" id="nav-avatar">?</div>
+        <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
+        <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container">
+<div class="page-header">
+    <h1>⚡ My Skills</h1>
+    <p>Manage skills by domain — teaching and learning</p>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- ── DOMAIN + SKILL SELECTOR ── -->
+<div class="domain-card">
+    <h3>➕ Add a Skill</h3>
+
+    <!-- Step 1: Pick domain -->
+    <div style="margin-bottom:14px;">
+        <label style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:8px;display:block;">
+            Step 1 — Choose a Domain
+        </label>
+        <div id="domain-badges">
+            <div class="spinner" style="width:20px;height:20px;"></div>
         </div>
-    </nav>
 
-    <div class="container">
-        <div class="page-header">
-            <h1>⚡ My Skills</h1>
-            <p>Manage the skills you can teach and the skills you want to learn</p>
-        </div>
+    </div>
 
-        <div id="alert-box"></div>
-
-        <!-- Add Skill Panel -->
-        <div class="card" style="margin-bottom: 24px;">
-            <div class="card-title">➕ Add a Skill</div>
-            <div class="add-skill-form">
+    <!-- Step 2: Pick skill in selected domain -->
+    <div id="skill-step" style="display:none;">
+        <label style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:8px;display:block;">
+            Step 2 — Choose a Skill <span id="step2-domain" style="color:var(--primary);"></span>
+        </label>
+        <div class="domain-row">
+            <div class="form-group">
+                <label>Skill</label>
                 <select class="form-control" id="skill-select">
-                    <option value="">Select a skill...</option>
+                    <option value="">Select a skill…</option>
                 </select>
-                <select class="form-control" id="skill-type" style="max-width:160px;">
-                    <option value="teach">I can Teach</option>
-                    <option value="learn">I want to Learn</option>
+            </div>
+            <div class="form-group" style="max-width:180px;">
+                <label>I want to</label>
+                <select class="form-control" id="skill-type">
+                    <option value="teach">Teach this skill</option>
+                    <option value="learn">Learn this skill</option>
                 </select>
-                <button class="btn btn-primary" onclick="addSkill()">Add</button>
             </div>
-
-            <div class="new-skill-section">
-                <label>Can't find your skill? Add a new one to the database:</label>
-                <div class="add-skill-form">
-                    <input type="text" class="form-control" id="new-skill-name"
-                           placeholder="e.g. Flutter, Blockchain, etc.">
-                    <button class="btn btn-secondary" onclick="addNewSkill()">+ Create Skill</button>
-                </div>
-            </div>
+            <button class="btn btn-primary" onclick="addSkill()" style="margin-bottom:0;">Add Skill</button>
         </div>
+        <div class="validation-msg" id="skill-validation"></div>
 
-        <!-- Skills Display -->
-        <div class="skills-columns">
-            <!-- Teach -->
-            <div class="card">
-                <div class="card-title" style="color: #137333;">
-                    🎓 Skills I Can Teach
-                    <span id="teach-count" class="badge badge-teach" style="margin-left:auto;">0</span>
-                </div>
-                <div id="teach-list">
-                    <div class="loading-overlay"><div class="spinner"></div></div>
-                </div>
-            </div>
-
-            <!-- Learn -->
-            <div class="card">
-                <div class="card-title" style="color: var(--primary);">
-                    📚 Skills I Want to Learn
-                    <span id="learn-count" class="badge badge-learn" style="margin-left:auto;">0</span>
-                </div>
-                <div id="learn-list">
-                    <div class="loading-overlay"><div class="spinner"></div></div>
-                </div>
+        <!-- Add new skill to domain -->
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <label style="font-size:0.78rem;color:var(--text-muted);">Can't find your skill? Add it to <span id="new-skill-domain-label" style="font-weight:600;"></span>:</label>
+            <div style="display:flex;gap:10px;margin-top:6px;">
+                <input type="text" class="form-control" id="new-skill-name" placeholder="e.g. Flutter, Blockchain…">
+                <button class="btn btn-secondary" onclick="addNewSkill()">+ Create</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="js/api.js?v=2.0"></script>
-    <script>
-        requireAuth();
-        renderNavUser();
-        setActiveNav('skills');
+<!-- ── MY SKILLS DISPLAY ── -->
+<div class="skills-layout">
+    <div class="card">
+        <div class="card-title" style="color:#137333;">
+            🎓 Skills I Can Teach
+            <span id="teach-count" class="badge badge-teach" style="margin-left:auto;">0</span>
+        </div>
+        <div id="teach-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+    </div>
+    <div class="card">
+        <div class="card-title" style="color:var(--primary);">
+            📚 Skills I Want to Learn
+            <span id="learn-count" class="badge badge-learn" style="margin-left:auto;">0</span>
+        </div>
+        <div id="learn-list"><div class="loading-overlay"><div class="spinner"></div></div></div>
+    </div>
+</div>
+</div>
 
-        const student = getCurrentStudent();
-        let allSkills = [];
-        let mySkills = [];
+<script src="js/api.js?v=2.0"></script>
+<script>
+requireAuth(); renderNavUser(); setActiveNav('skills');
 
-        async function loadData() {
-            const [skillsRes, profileRes] = await Promise.all([
-                Skills.getAll(),
-                Students.getById(student.id)
-            ]);
+const student = getCurrentStudent();
+let allDomains  = [];
+let allSkills   = [];
+let mySkills    = [];
+let selectedDomainId = null;
 
-            if (skillsRes.ok) {
-                allSkills = skillsRes.data;
-                populateSkillSelect();
-            }
+async function loadData() {
+    const [domainsRes, skillsRes, profileRes] = await Promise.all([
+        apiFetch('/domains'),
+        Skills.getAll(),
+        Students.getById(student.id)
+    ]);
+    if (domainsRes.ok)  { allDomains = domainsRes.data; renderDomainBadges(); }
+    if (skillsRes.ok)   allSkills = skillsRes.data;
+    if (profileRes.ok)  { mySkills = profileRes.data.skills; renderMySkills(); }
+}
 
-            if (profileRes.ok) {
-                mySkills = profileRes.data.skills;
-                renderSkills();
-            }
-        }
+// ── Domain badges ─────────────────────────────────────────────
+function renderDomainBadges() {
+    document.getElementById('domain-badges').innerHTML =
+        allDomains.map(d => `
+        <span class="domain-badge ${selectedDomainId===d.domain_id?'selected':''}"
+              onclick="selectDomain(${d.domain_id},'${d.domain_name.replace(/'/g,"\\'")}')">
+            ${d.domain_icon||'📚'} ${d.domain_name}
+        </span>`).join('');
+}
 
-        function populateSkillSelect() {
-            const sel = document.getElementById('skill-select');
-            sel.innerHTML = '<option value="">Select a skill...</option>' +
-                allSkills.map(s => `<option value="${s.skill_id}">${s.skill_name}</option>`).join('');
-        }
+function selectDomain(id, name) {
+    selectedDomainId = id;
+    renderDomainBadges();
 
-        function renderSkills() {
-            const teaches = mySkills.filter(s => s.type === 'teach');
-            const learns  = mySkills.filter(s => s.type === 'learn');
+    // Show step 2
+    document.getElementById('skill-step').style.display = 'block';
+    document.getElementById('step2-domain').textContent = `— ${name}`;
+    document.getElementById('new-skill-domain-label').textContent = name;
+    document.getElementById('skill-validation').className = 'validation-msg';
 
-            document.getElementById('teach-count').textContent = teaches.length;
-            document.getElementById('learn-count').textContent = learns.length;
+    // Load skills for this domain only
+    const domainSkills = allSkills.filter(s => s.domain_id === id);
+    const sel = document.getElementById('skill-select');
+    sel.innerHTML = '<option value="">Select a skill…</option>' +
+        domainSkills.map(s => `<option value="${s.skill_id}">${s.skill_name}</option>`).join('');
+}
 
-            document.getElementById('teach-list').innerHTML = teaches.length
-                ? teaches.map(s => skillItem(s)).join('')
-                : emptySkillMsg('No teaching skills added yet');
+// ── Add skill ─────────────────────────────────────────────────
+async function addSkill() {
+    const skill_id = document.getElementById('skill-select').value;
+    const type     = document.getElementById('skill-type').value;
+    const valEl    = document.getElementById('skill-validation');
 
-            document.getElementById('learn-list').innerHTML = learns.length
-                ? learns.map(s => skillItem(s)).join('')
-                : emptySkillMsg('No learning goals added yet');
-        }
+    if (!selectedDomainId) {
+        valEl.textContent = '⚠️ Please select a domain first.';
+        valEl.className = 'validation-msg error'; return;
+    }
+    if (!skill_id) {
+        valEl.textContent = '⚠️ Please select a skill from the list.';
+        valEl.className = 'validation-msg error'; return;
+    }
 
-        function skillItem(s) {
-            return `
-                <div class="skill-list-item" id="skill-item-${s.id}">
-                    <div class="skill-list-item-left">
-                        <span>${s.type === 'teach' ? '⚡' : '📚'}</span>
-                        <span>${s.skill_name}</span>
-                    </div>
-                    <button class="btn btn-danger btn-sm" onclick="removeSkill(${s.id})">✕</button>
-                </div>`;
-        }
+    // Validate: skill must belong to selected domain
+    const skill = allSkills.find(s => s.skill_id === parseInt(skill_id));
+    if (skill && skill.domain_id && skill.domain_id !== selectedDomainId) {
+        const domain = allDomains.find(d => d.domain_id === selectedDomainId);
+        valEl.textContent = `⛔ "${skill.skill_name}" does not belong to "${domain?.domain_name}". Please pick a skill from the correct domain.`;
+        valEl.className = 'validation-msg error'; return;
+    }
 
-        function emptySkillMsg(msg) {
-            return `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.875rem;">${msg}</div>`;
-        }
+    const res = await Skills.addStudentSkill(student.id, skill_id, type);
+    if (res.ok) {
+        valEl.textContent = '✅ Skill added!';
+        valEl.className = 'validation-msg success';
+        showAlert(document.getElementById('alert-box'), 'Skill added!', 'success');
+        await loadData();
+    } else {
+        valEl.textContent = '⚠️ ' + (res.data.error || 'Failed to add skill');
+        valEl.className = 'validation-msg error';
+    }
+}
 
-        async function addSkill() {
-            const skill_id = document.getElementById('skill-select').value;
-            const type = document.getElementById('skill-type').value;
-            const alertBox = document.getElementById('alert-box');
+// ── Add new skill to selected domain ─────────────────────────
+async function addNewSkill() {
+    const name  = document.getElementById('new-skill-name').value.trim();
+    const alertBox = document.getElementById('alert-box');
 
-            if (!skill_id) {
-                showAlert(alertBox, 'Please select a skill', 'error');
-                return;
-            }
+    if (!selectedDomainId) { showAlert(alertBox,'Select a domain first','error'); return; }
+    if (!name) { showAlert(alertBox,'Enter a skill name','error'); return; }
 
-            const res = await Skills.addStudentSkill(student.id, skill_id, type);
-            if (res.ok) {
-                showAlert(alertBox, 'Skill added successfully!', 'success');
-                await loadData();
-            } else {
-                showAlert(alertBox, res.data.error || 'Failed to add skill', 'error');
-            }
-        }
+    // Add skill via API
+    const res = await apiFetch('/skills', {
+        method:'POST', body: JSON.stringify({ skill_name: name, domain_id: selectedDomainId })
+    });
+    if (res.ok) {
+        showAlert(alertBox, `"${name}" added to domain!`, 'success');
+        document.getElementById('new-skill-name').value = '';
+        await loadData();
+        selectDomain(selectedDomainId, allDomains.find(d=>d.domain_id===selectedDomainId)?.domain_name||'');
+    } else {
+        showAlert(alertBox, res.data.error || 'Failed to create skill', 'error');
+    }
+}
 
-        async function addNewSkill() {
-            const name = document.getElementById('new-skill-name').value.trim();
-            const alertBox = document.getElementById('alert-box');
+// ── Add new domain ────────────────────────────────────────────
+function toggleAddDomain() {
+    document.getElementById('add-domain-panel').classList.toggle('open');
+}
+async function createDomain() {
+    const name = document.getElementById('new-domain-name').value.trim();
+    const icon = document.getElementById('new-domain-icon').value.trim() || '📚';
+    if (!name) { showAlert(document.getElementById('alert-box'),'Enter domain name','error'); return; }
 
-            if (!name) {
-                showAlert(alertBox, 'Enter a skill name', 'error');
-                return;
-            }
+    const res = await apiFetch('/domains',{method:'POST',body:JSON.stringify({domain_name:name,domain_icon:icon})});
+    if (res.ok) {
+        showAlert(document.getElementById('alert-box'),`Domain "${name}" created!`,'success');
+        document.getElementById('new-domain-name').value = '';
+        document.getElementById('add-domain-panel').classList.remove('open');
+        await loadData();
+    } else {
+        showAlert(document.getElementById('alert-box'), res.data.error||'Failed','error');
+    }
+}
 
-            const res = await Skills.addSkill(name);
-            if (res.ok) {
-                showAlert(alertBox, `"${name}" added to skills database!`, 'success');
-                document.getElementById('new-skill-name').value = '';
-                await loadData();
-            } else {
-                showAlert(alertBox, res.data.error || 'Failed to create skill', 'error');
-            }
-        }
+// ── My Skills display ─────────────────────────────────────────
+function renderMySkills() {
+    const teaches = mySkills.filter(s => s.type==='teach');
+    const learns  = mySkills.filter(s => s.type==='learn');
+    document.getElementById('teach-count').textContent = teaches.length;
+    document.getElementById('learn-count').textContent = learns.length;
+    document.getElementById('teach-list').innerHTML = teaches.length ? teaches.map(skillItem).join('') : emptyMsg('No teaching skills yet');
+    document.getElementById('learn-list').innerHTML = learns.length  ? learns.map(skillItem).join('')  : emptyMsg('No learning goals yet');
+}
 
-        async function removeSkill(id) {
-            if (!confirm('Remove this skill?')) return;
-            const res = await Skills.removeStudentSkill(id);
-            if (res.ok) {
-                mySkills = mySkills.filter(s => s.id !== id);
-                renderSkills();
-                showAlert(document.getElementById('alert-box'), 'Skill removed', 'info');
-            }
-        }
+function skillItem(s) {
+    const domain = allDomains.find(d => {
+        const sk = allSkills.find(sk => sk.skill_id === s.skill_id);
+        return sk && sk.domain_id === d.domain_id;
+    });
+    return `<div class="skill-list-item" id="skill-item-${s.id}">
+        <div class="skill-list-item-left">
+            <span>${s.type==='teach'?'⚡':'📚'}</span>
+            <span>${s.skill_name}</span>
+            ${domain?`<span class="skill-domain-chip">${domain.domain_icon||''} ${domain.domain_name}</span>`:''}
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="removeSkill(${s.id})">✕</button>
+    </div>`;
+}
+function emptyMsg(msg) {
+    return `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.875rem;">${msg}</div>`;
+}
 
-        loadData();
-    </script>
+async function removeSkill(id) {
+    if (!confirm('Remove this skill?')) return;
+    const res = await Skills.removeStudentSkill(id);
+    if (res.ok) { mySkills=mySkills.filter(s=>s.id!==id); renderMySkills(); }
+}
+
+// Also patch /api/skills POST to accept domain_id
+const _origAddSkill = Skills.addSkill.bind(Skills);
+Skills.addSkill = async (skill_name, domain_id) =>
+    apiFetch('/skills',{method:'POST',body:JSON.stringify({skill_name,domain_id})});
+
+loadData();
+</script>
 </body>
 </html>

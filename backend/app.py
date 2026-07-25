@@ -169,7 +169,7 @@ def update_student(student_id):
 def get_all_skills():
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM skills ORDER BY skill_name")
+    cursor.execute("SELECT skill_id, skill_name, domain_id FROM skills ORDER BY skill_name")
     skills = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -180,10 +180,13 @@ def get_all_skills():
 def add_skill():
     data = request.json
     skill_name = data.get('skill_name', '').strip()
+    domain_id  = data.get('domain_id')
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO skills (skill_name) VALUES (%s)", (skill_name,))
+        cursor.execute(
+            "INSERT INTO skills (skill_name, domain_id) VALUES (%s, %s)",
+            (skill_name, domain_id))
         conn.commit()
         skill_id = cursor.lastrowid
         return jsonify({'skill_id': skill_id, 'skill_name': skill_name}), 201
@@ -404,6 +407,237 @@ def get_skills_by_domain(domain_id):
     skills = cursor.fetchall()
     cursor.close(); conn.close()
     return jsonify(skills)
+
+
+import base64, uuid, os, json as json_lib
+
+# ============================================
+# GROUPS API
+# ============================================
+
+@app.route('/api/groups', methods=['POST'])
+def create_group():
+    data = request.json
+    conn = get_db(); cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO chat_groups (group_name, description, created_by) VALUES (%s,%s,%s)",
+            (data['group_name'], data.get('description',''), data['created_by'])
+        )
+        conn.commit()
+        gid = cursor.lastrowid
+        # Add creator as admin + other members
+        cursor.execute("INSERT INTO group_members (group_id,student_id,role) VALUES (%s,%s,'admin')",
+                       (gid, data['created_by']))
+        for mid in data.get('members', []):
+            if mid != data['created_by']:
+                try:
+                    cursor.execute("INSERT INTO group_members (group_id,student_id,role) VALUES (%s,%s,'member')",
+                                   (gid, mid))
+                except: pass
+        conn.commit()
+        return jsonify({'group_id': gid, 'message': 'Group created'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+
+@app.route('/api/groups/<int:student_id>', methods=['GET'])
+def get_my_groups(student_id):
+    conn = get_db(); cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT g.group_id, g.group_name, g.description, g.group_icon,
+               g.created_at, g.created_by, gm.role,
+               (SELECT COUNT(*) FROM group_members WHERE group_id=g.group_id) AS member_count,
+               (SELECT message FROM group_messages WHERE group_id=g.group_id ORDER BY timestamp DESC LIMIT 1) AS last_msg
+        FROM chat_groups g
+        JOIN group_members gm ON g.group_id=gm.group_id
+        WHERE gm.student_id=%s ORDER BY g.created_at DESC
+    """, (student_id,))
+    groups = cursor.fetchall()
+    cursor.close(); conn.close()
+    return jsonify(groups)
+
+
+@app.route('/api/groups/<int:group_id>/messages', methods=['GET'])
+def get_group_messages(group_id):
+    conn = get_db(); cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT gm.*, s.name AS sender_name
+        FROM group_messages gm
+        JOIN students s ON gm.sender_id=s.id
+        WHERE gm.group_id=%s ORDER BY gm.timestamp ASC
+    """, (group_id,))
+    msgs = cursor.fetchall()
+    cursor.close(); conn.close()
+    return jsonify(msgs)
+
+
+@app.route('/api/groups/<int:group_id>/messages', methods=['POST'])
+def send_group_message(group_id):
+    data = request.json
+    conn = get_db(); cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO group_messages (group_id,sender_id,message,message_type,file_url,file_name)
+        VALUES (%s,%s,%s,%s,%s,%s)
+    """, (group_id, data['sender_id'], data.get('message',''),
+          data.get('message_type','text'), data.get('file_url'), data.get('file_name')))
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({'message': 'Sent'}), 201
+
+
+@app.route('/api/groups/<int:group_id>/members', methods=['GET'])
+def get_group_members(group_id):
+    conn = get_db(); cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT s.id, s.name, s.department, s.year, gm.role, gm.joined_at
+        FROM group_members gm JOIN students s ON gm.student_id=s.id
+        WHERE gm.group_id=%s ORDER BY gm.role DESC, s.name ASC
+    """, (group_id,))
+    members = cursor.fetchall()
+    cursor.close(); conn.close()
+    return jsonify(members)
+
+
+@app.route('/api/groups/<int:group_id>/members', methods=['POST'])
+def add_group_member(group_id):
+    data = request.json
+    conn = get_db(); cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO group_members (group_id,student_id,role) VALUES (%s,%s,'member')",
+                       (group_id, data['student_id']))
+        conn.commit()
+        return jsonify({'message': 'Member added'}), 201
+    except:
+        return jsonify({'error': 'Already a member'}), 409
+    finally:
+        cursor.close(); conn.close()
+
+
+@app.route('/api/groups/<int:group_id>/members/<int:student_id>', methods=['DELETE'])
+def remove_group_member(group_id, student_id):
+    conn = get_db(); cursor = conn.cursor()
+    cursor.execute("DELETE FROM group_members WHERE group_id=%s AND student_id=%s",
+                   (group_id, student_id))
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({'message': 'Removed'})
+
+
+# ============================================
+# PROFILE PICTURE API
+# ============================================
+
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'uploads')
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.route('/api/profile-pic/<int:student_id>', methods=['POST'])
+def upload_profile_pic(student_id):
+    data = request.json
+    b64  = data.get('image_b64', '')
+    if not b64:
+        return jsonify({'error': 'No image data'}), 400
+
+    # Validate size (max 5MB base64 ≈ 6.7MB encoded)
+    if len(b64) > 7_000_000:
+        return jsonify({'error': 'Image too large. Max 5MB'}), 400
+
+    # Decode and save
+    try:
+        # Strip data URL prefix if present
+        if ',' in b64:
+            b64 = b64.split(',', 1)[1]
+        img_bytes = base64.b64decode(b64)
+        fname = f"pic_{student_id}_{uuid.uuid4().hex[:8]}.jpg"
+        fpath = os.path.join(UPLOAD_DIR, fname)
+        with open(fpath, 'wb') as f:
+            f.write(img_bytes)
+
+        url = f'/uploads/{fname}'
+        conn = get_db(); cursor = conn.cursor()
+        cursor.execute("UPDATE students SET profile_pic=%s WHERE id=%s", (url, student_id))
+        conn.commit()
+        cursor.close(); conn.close()
+        return jsonify({'url': url, 'message': 'Profile picture updated'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-pic/<int:student_id>', methods=['DELETE'])
+def remove_profile_pic(student_id):
+    conn = get_db(); cursor = conn.cursor()
+    cursor.execute("UPDATE students SET profile_pic=NULL WHERE id=%s", (student_id,))
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({'message': 'Profile picture removed'})
+
+
+@app.route('/api/avatar/<int:student_id>', methods=['PUT'])
+def set_avatar(student_id):
+    data = request.json
+    conn = get_db(); cursor = conn.cursor()
+    cursor.execute("UPDATE students SET avatar_key=%s, profile_pic=NULL WHERE id=%s",
+                   (data.get('avatar_key'), student_id))
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({'message': 'Avatar updated'})
+
+
+# ============================================
+# ENHANCED MESSAGES — reactions, reply, delete, edit
+# ============================================
+
+@app.route('/api/messages/<int:msg_id>/react', methods=['POST'])
+def react_message(msg_id):
+    data = request.json
+    conn = get_db(); cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO message_reactions (message_id,student_id,emoji)
+            VALUES (%s,%s,%s)
+            ON DUPLICATE KEY UPDATE emoji=%s
+        """, (msg_id, data['student_id'], data['emoji'], data['emoji']))
+        conn.commit()
+        return jsonify({'message': 'Reaction added'})
+    finally:
+        cursor.close(); conn.close()
+
+
+@app.route('/api/messages/<int:msg_id>/delete', methods=['PUT'])
+def delete_message(msg_id):
+    data = request.json
+    scope = data.get('scope', 'me')  # 'me' or 'everyone'
+    conn = get_db(); cursor = conn.cursor()
+    if scope == 'everyone':
+        cursor.execute("UPDATE messages SET is_deleted=1, message='This message was deleted' WHERE message_id=%s",
+                       (msg_id,))
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({'message': 'Deleted'})
+
+
+@app.route('/api/messages/<int:msg_id>/edit', methods=['PUT'])
+def edit_message(msg_id):
+    data = request.json
+    conn = get_db(); cursor = conn.cursor()
+    cursor.execute("UPDATE messages SET message=%s, edited_at=NOW() WHERE message_id=%s",
+                   (data['message'], msg_id))
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({'message': 'Edited'})
+
+
+# ============================================
+# SERVE UPLOADED FILES
+# ============================================
+
+from flask import send_from_directory
+
+@app.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    return send_from_directory(UPLOAD_DIR, filename)
 
 
 # ============================================

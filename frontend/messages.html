@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Messages - Student Skills Exchange</title>
-<link rel="stylesheet" href="css/style.css?v=3.0">
-<link rel="stylesheet" href="css/messages.css?v=3.0">
+<link rel="stylesheet" href="css/style.css?v=2.0">
+<link rel="stylesheet" href="css/messages.css?v=2.0">
 </head>
 <body>
 <nav class="navbar">
@@ -27,108 +27,123 @@
 
 <div class="msg-layout">
 
-<!-- ═══ LEFT SIDEBAR ═══ -->
+<!-- ═══ SIDEBAR ═══ -->
 <div class="sidebar">
     <div class="sidebar-top">
-        <div class="sidebar-brand">💬 Messages</div>
-        <button class="new-chat-fab" onclick="openNewChatModal()" title="New Chat">✎</button>
+        <div class="sidebar-brand">💬 Chats</div>
+        <div class="sidebar-top-actions">
+            <button class="fab-btn" onclick="openGroupModal()" title="New Group">👥</button>
+            <button class="fab-btn" onclick="openNewChatModal()" title="New Chat">✎</button>
+        </div>
     </div>
     <div class="sidebar-search">
-        <span class="s-icon">🔍</span>
-        <input type="text" id="contact-search" placeholder="Search conversations..." oninput="filterContacts()">
+        <span>🔍</span>
+        <input type="text" id="contact-search" placeholder="Search…" oninput="filterContacts()">
     </div>
-    <div class="unread-banner" id="unread-banner" style="display:none;">
-        <span id="unread-text"></span>
+    <!-- Tabs: Chats / Groups -->
+    <div class="sidebar-tabs">
+        <button class="stab active" onclick="switchSidebarTab('chats',this)">Chats</button>
+        <button class="stab"        onclick="switchSidebarTab('groups',this)">Groups</button>
     </div>
-    <div class="contacts-scroll" id="contacts-list">
-        <div class="loading-overlay"><div class="spinner"></div></div>
-    </div>
+    <div class="unread-banner" id="unread-banner" style="display:none;"><span id="unread-text"></span></div>
+    <div class="contacts-scroll" id="contacts-list"></div>
     <div class="sidebar-footer">
-        <div class="sf-avatar" id="sf-avatar"></div>
-        <div class="sf-info">
-            <div class="sf-name" id="sf-name"></div>
-            <div class="sf-status">● Online</div>
-        </div>
-        <a href="profile.html" class="sf-settings" title="Settings">⚙️</a>
+        <div class="sf-av" id="sf-av"></div>
+        <div class="sf-info"><div class="sf-name" id="sf-name"></div><div class="sf-status">● Online</div></div>
+        <a href="profile.html" class="sf-settings">⚙️</a>
     </div>
 </div>
 
 <!-- ═══ MAIN PANEL ═══ -->
 <div class="main-panel">
+    <!-- No chat selected -->
     <div class="no-chat" id="no-chat">
-        <div class="no-chat-icon">💬</div>
+        <div style="font-size:4rem;opacity:0.15;">💬</div>
         <h3>Select a conversation</h3>
-        <p>Choose a chat on the left or start a new one</p>
-        <button class="btn btn-primary" onclick="openNewChatModal()">+ Start New Chat</button>
+        <p>Start a new chat or create a group</p>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="openNewChatModal()">+ New Chat</button>
+            <button class="btn btn-secondary btn-sm" onclick="openGroupModal()">👥 New Group</button>
+        </div>
     </div>
 
-    <div class="chat-wrapper" id="chat-wrapper" style="display:none; flex-direction:column; height:100%;">
+    <!-- Active chat -->
+    <div class="chat-wrapper" id="chat-wrapper" style="display:none;">
 
-        <!-- Chat Header -->
+        <!-- Header -->
         <div class="chat-hdr">
             <div class="chat-hdr-left">
-                <div class="chat-avatar" id="ch-avatar"></div>
+                <div class="ch-av" id="ch-av"></div>
                 <div>
                     <div class="chat-hdr-name" id="ch-name"></div>
-                    <div class="chat-hdr-status">
+                    <div class="chat-hdr-sub"  id="ch-sub">
                         <span class="status-dot offline" id="status-dot"></span>
                         <span id="status-text">Offline</span>
                     </div>
                 </div>
             </div>
-            <div class="chat-hdr-actions">
-                <button class="hdr-btn active" onclick="showTab('chat')"    id="tab-chat-btn"    title="Chat">💬</button>
-                <button class="hdr-btn"        onclick="showTab('content')" id="tab-content-btn" title="Shared Content">📁</button>
+            <div class="chat-hdr-right">
+                <button class="hdr-icon-btn" onclick="showTab('chat')"    id="tbtn-chat"    title="Chat">💬</button>
+                <button class="hdr-icon-btn" onclick="showTab('media')"   id="tbtn-media"   title="Media">🖼️</button>
+                <button class="hdr-icon-btn" onclick="showTab('docs')"    id="tbtn-docs"    title="Docs">📄</button>
+                <button class="hdr-icon-btn" onclick="showTab('links')"   id="tbtn-links"   title="Links">🔗</button>
             </div>
         </div>
 
-        <!-- ── TAB: CHAT ── -->
+        <!-- Chat tab -->
         <div id="tab-chat" class="tab-body">
             <div class="chat-msgs" id="chat-msgs"></div>
-            <div class="typing-indicator" id="typing-ind" style="display:none;">
+            <div class="typing-bar" id="typing-ind" style="display:none;">
                 <span id="typing-name"></span> is typing
                 <span class="typing-dots"><span></span><span></span><span></span></span>
             </div>
-            <div class="chat-input-bar">
-                <!-- ✦ Diamond attach button -->
-                <button class="attach-btn" onclick="toggleAttachMenu()" title="Attach / Share">&#10022;</button>
-                <div class="attach-menu" id="attach-menu" style="display:none;">
-                    <button onclick="openShareModal('media')">🎬 Media</button>
-                    <button onclick="openShareModal('document')">📄 Document</button>
-                    <button onclick="openShareModal('link')">🔗 Link</button>
+            <div class="input-bar" id="input-bar">
+                <!-- ✦ Attach -->
+                <button class="icon-btn attach-diamond" onclick="toggleAttachMenu()" title="Attach">&#10022;</button>
+                <!-- Attach menu popup -->
+                <div class="attach-popup" id="attach-menu" style="display:none;">
+                    <button onclick="triggerCamera()">    <span class="ap-icon" style="background:#ea4335;">📷</span>Camera</button>
+                    <button onclick="triggerGallery()">   <span class="ap-icon" style="background:#4285f4;">🖼️</span>Gallery</button>
+                    <button onclick="triggerLocation()">  <span class="ap-icon" style="background:#34a853;">📍</span>Location</button>
+                    <button onclick="openDocPicker()">    <span class="ap-icon" style="background:#fbbc04;">📄</span>Document</button>
+                    <button onclick="openPollModal()">    <span class="ap-icon" style="background:#9c27b0;">📊</span>Poll</button>
+                </div>
+                <!-- Hidden file inputs -->
+                <input type="file" id="camera-input"   accept="image/*,video/*" capture="environment" style="display:none;" onchange="handleFileAttach(this,'camera')">
+                <input type="file" id="gallery-input"  accept="image/*,video/*"                       style="display:none;" onchange="handleFileAttach(this,'gallery')">
+                <input type="file" id="doc-input"      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" style="display:none;" onchange="handleFileAttach(this,'document')">
+
+                <!-- 😊 Emoji -->
+                <button class="icon-btn emoji-open" onclick="toggleEspPanel()" title="Emoji/GIF/Sticker">😊</button>
+
+                <!-- Reply preview -->
+                <div class="reply-preview" id="reply-preview" style="display:none;">
+                    <div class="rp-content" id="rp-content"></div>
+                    <button onclick="clearReply()">✕</button>
                 </div>
 
-                <!-- 😊 Emoji/GIF/Sticker button -->
-                <button class="emoji-btn" onclick="toggleEmojiPanel()" title="Emoji · GIF · Sticker">😊</button>
-
-                <input type="text" id="msg-input" class="msg-input" placeholder="Type a message..."
+                <input type="text" id="msg-input" class="msg-input" placeholder="Type a message…"
                        oninput="onTyping()" onkeyup="if(event.key==='Enter')sendMsg()">
                 <button class="send-btn" onclick="sendMsg()">➤</button>
             </div>
 
-            <!-- ── Emoji / GIF / Sticker Panel ── -->
+            <!-- Emoji/GIF/Sticker panel -->
             <div class="esp-panel" id="esp-panel" style="display:none;">
                 <div class="esp-tabs">
                     <button class="esp-tab active" onclick="switchEspTab('emoji',this)">😊 Emoji</button>
                     <button class="esp-tab"        onclick="switchEspTab('gif',this)">🎞️ GIF</button>
                     <button class="esp-tab"        onclick="switchEspTab('sticker',this)">🎨 Stickers</button>
                 </div>
-
-                <!-- Emoji Tab -->
                 <div id="esp-emoji" class="esp-body">
-                    <input type="text" class="esp-search" id="emoji-search" placeholder="Search emojis…" oninput="filterEmojis()">
+                    <input class="esp-search" id="emoji-search" placeholder="Search emojis…" oninput="filterEmojis()">
                     <div class="esp-cats" id="emoji-cats"></div>
                     <div class="esp-grid" id="emoji-grid"></div>
                     <div class="esp-recent" id="emoji-recent"></div>
                 </div>
-
-                <!-- GIF Tab -->
                 <div id="esp-gif" class="esp-body" style="display:none;">
-                    <input type="text" class="esp-search" id="gif-search" placeholder="Search GIFs… (Tenor)" oninput="searchGIFs()">
+                    <input class="esp-search" id="gif-search" placeholder="Search GIFs…" oninput="searchGIFs()">
                     <div class="gif-grid" id="gif-grid"></div>
                 </div>
-
-                <!-- Sticker Tab -->
                 <div id="esp-sticker" class="esp-body" style="display:none;">
                     <div class="sticker-packs" id="sticker-packs"></div>
                     <div class="sticker-grid" id="sticker-grid"></div>
@@ -136,55 +151,115 @@
             </div>
         </div>
 
-        <!-- ── TAB: SHARED CONTENT ── -->
-        <div id="tab-content" class="tab-body" style="display:none;">
-            <div class="content-tabs">
-                <button class="ctab active" onclick="switchContentTab('media',this)">🎬 Media</button>
-                <button class="ctab" onclick="switchContentTab('document',this)">📄 Documents</button>
-                <button class="ctab" onclick="switchContentTab('link',this)">🔗 Links</button>
-            </div>
-            <div class="content-list" id="content-list">
-                <div class="loading-overlay"><div class="spinner"></div></div>
-            </div>
+        <!-- Media tab -->
+        <div id="tab-media" class="tab-body content-tab" style="display:none;">
+            <div class="ct-header">🖼️ Media</div>
+            <div class="media-grid" id="media-grid"></div>
+        </div>
+
+        <!-- Docs tab -->
+        <div id="tab-docs" class="tab-body content-tab" style="display:none;">
+            <div class="ct-header">📄 Documents</div>
+            <div class="content-list" id="docs-list"></div>
+        </div>
+
+        <!-- Links tab -->
+        <div id="tab-links" class="tab-body content-tab" style="display:none;">
+            <div class="ct-header">🔗 Links</div>
+            <div class="content-list" id="links-list"></div>
         </div>
 
     </div>
+
+    <!-- Group chat panel -->
+    <div class="chat-wrapper" id="group-wrapper" style="display:none;">
+        <div class="chat-hdr" style="background:linear-gradient(135deg,#1a73e8,#0d47a1);">
+            <div class="chat-hdr-left">
+                <div class="ch-av grp-av" id="grp-av">👥</div>
+                <div>
+                    <div class="chat-hdr-name" id="grp-name" style="color:white;"></div>
+                    <div class="chat-hdr-sub"  id="grp-sub" style="color:rgba(255,255,255,0.7);"></div>
+                </div>
+            </div>
+            <div class="chat-hdr-right">
+                <button class="hdr-icon-btn" onclick="showGrpInfo()" title="Group Info">ℹ️</button>
+            </div>
+        </div>
+        <div class="chat-msgs" id="grp-msgs"></div>
+        <div class="input-bar">
+            <button class="icon-btn attach-diamond" onclick="toggleGrpAttach()" title="Attach">&#10022;</button>
+            <div class="attach-popup" id="grp-attach-menu" style="display:none;">
+                <button onclick="triggerGrpGallery()"><span class="ap-icon" style="background:#4285f4;">🖼️</span>Gallery</button>
+                <button onclick="openGrpDocPicker()"> <span class="ap-icon" style="background:#fbbc04;">📄</span>Document</button>
+                <button onclick="openGrpPollModal()"> <span class="ap-icon" style="background:#9c27b0;">📊</span>Poll</button>
+            </div>
+            <input type="file" id="grp-gallery-input" accept="image/*,video/*" style="display:none;" onchange="handleGrpFile(this)">
+            <input type="file" id="grp-doc-input"     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none;" onchange="handleGrpFile(this)">
+            <button class="icon-btn emoji-open" onclick="toggleEspPanel()" title="Emoji">😊</button>
+            <input type="text" id="grp-input" class="msg-input" placeholder="Message group…"
+                   onkeyup="if(event.key==='Enter')sendGrpMsg()">
+            <button class="send-btn" onclick="sendGrpMsg()">➤</button>
+        </div>
+    </div>
 </div>
 </div>
 
-<!-- ═══ NEW CHAT MODAL ═══ -->
+<!-- ═══ MODALS ═══ -->
+
+<!-- New Chat -->
 <div class="modal-overlay" id="new-chat-modal">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-header">
-        <h3>✎ Start New Chat</h3>
-        <button class="modal-close" onclick="document.getElementById('new-chat-modal').classList.remove('active')">✕</button>
-    </div>
-    <div class="form-group">
-        <label>Select Student</label>
-        <select class="form-control" id="new-chat-select"></select>
-    </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="startNewChat()">
-        Open Chat →
-    </button>
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><h3>✎ New Chat</h3>
+        <button class="modal-close" onclick="closeModal('new-chat-modal')">✕</button></div>
+    <div class="form-group"><label>Select Student</label>
+        <select class="form-control" id="new-chat-select"></select></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="startNewChat()">Open Chat →</button>
   </div>
 </div>
 
-<!-- ═══ SHARE CONTENT MODAL ═══ -->
-<div class="modal-overlay" id="share-modal">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-header">
-        <h3 id="share-modal-title">Share Content</h3>
-        <button class="modal-close" onclick="closeShareModal()">✕</button>
-    </div>
-    <div id="share-fields"></div>
-    <div id="share-alert"></div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px;" onclick="submitShare()">
-        Share →
-    </button>
+<!-- Create Group -->
+<div class="modal-overlay" id="group-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header"><h3>👥 Create Group</h3>
+        <button class="modal-close" onclick="closeModal('group-modal')">✕</button></div>
+    <div class="form-group"><label>Group Name</label>
+        <input type="text" class="form-control" id="grp-name-input" placeholder="e.g. Python Study Group"></div>
+    <div class="form-group"><label>Description (optional)</label>
+        <input type="text" class="form-control" id="grp-desc-input" placeholder="What is this group about?"></div>
+    <div class="form-group"><label>Add Members</label>
+        <div id="member-list" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div></div>
+    <div id="grp-alert"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="createGroup()">Create Group →</button>
   </div>
 </div>
 
-<script src="js/api.js?v=3.0"></script>
-<script src="js/messages.js?v=3.0"></script>
+<!-- Poll Modal -->
+<div class="modal-overlay" id="poll-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header"><h3>📊 Create Poll</h3>
+        <button class="modal-close" onclick="closeModal('poll-modal')">✕</button></div>
+    <div class="form-group"><label>Question</label>
+        <input type="text" class="form-control" id="poll-question" placeholder="Ask something…"></div>
+    <div id="poll-options">
+        <div class="form-group"><label>Options</label>
+            <input type="text" class="form-control poll-opt" placeholder="Option 1" style="margin-bottom:6px;">
+            <input type="text" class="form-control poll-opt" placeholder="Option 2"></div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="addPollOption()" style="margin-bottom:12px;">+ Add Option</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="sendPoll()">Send Poll →</button>
+  </div>
+</div>
+
+<!-- Group Info -->
+<div class="modal-overlay" id="grp-info-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header"><h3 id="grp-info-title">Group Info</h3>
+        <button class="modal-close" onclick="closeModal('grp-info-modal')">✕</button></div>
+    <div id="grp-info-body"></div>
+  </div>
+</div>
+
+<script src="js/api.js?v=2.0"></script>
+<script src="js/messages.js?v=2.0"></script>
 </body>
 </html>
