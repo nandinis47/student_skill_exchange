@@ -367,6 +367,45 @@ def get_stats():
     })
 
 
+@app.route('/api/domains', methods=['GET'])
+def get_domains():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM skill_domains ORDER BY domain_name")
+    domains = cursor.fetchall()
+    cursor.close(); conn.close()
+    return jsonify(domains)
+
+
+@app.route('/api/domains', methods=['POST'])
+def add_domain():
+    data = request.json
+    name = data.get('domain_name', '').strip()
+    icon = data.get('domain_icon', '📚')
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO skill_domains (domain_name, domain_icon) VALUES (%s,%s)", (name, icon))
+        conn.commit()
+        return jsonify({'domain_id': cursor.lastrowid, 'domain_name': name, 'domain_icon': icon}), 201
+    except Exception as e:
+        return jsonify({'error': 'Domain already exists'}), 409
+    finally:
+        cursor.close(); conn.close()
+
+
+@app.route('/api/domains/<int:domain_id>/skills', methods=['GET'])
+def get_skills_by_domain(domain_id):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT * FROM skills WHERE domain_id=%s ORDER BY skill_name", (domain_id,))
+    skills = cursor.fetchall()
+    cursor.close(); conn.close()
+    return jsonify(skills)
+
+
 # ============================================
 # GAMIFICATION — XP / STREAK / TODAY'S FOCUS
 # ============================================
