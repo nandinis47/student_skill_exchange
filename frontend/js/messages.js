@@ -708,3 +708,398 @@ Messages.send = async (sender_id,receiver_id,message,message_type='text',file_ur
     apiFetch('/messages',{method:'POST',body:JSON.stringify({sender_id,receiver_id,message,message_type,file_url,file_name})});
 
 init();
+
+// ============================================================
+//  MISSING FEATURES — Voice Notes, Forward, Report,
+//  Dark Mode, Notifications, Pin/Mute/Archive/Block, Search
+// ============================================================
+
+// ── VOICE NOTES ──────────────────────────────────────────────
+let mediaRecorder = null;
+let voiceChunks   = [];
+let voiceInterval = null;
+let voiceSeconds  = 0;
+
+async function startVoiceNote() {
+    if (!currentChatId) return;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        voiceChunks   = [];
+        voiceSeconds  = 0;
+
+        mediaRecorder.ondataavailable = e => voiceChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+            const blob   = new Blob(voiceChunks, { type: 'audio/webm' });
+            const b64    = await blobToBase64(blob);
+            stream.getTracks().forEach(t => t.stop());
+            await apiFetch('/messages', { method:'POST', body: JSON.stringify({
+                sender_id: student.id, receiver_id: currentChatId,
+                message: `🎙️ Voice note (${voiceSeconds}s)`,
+                message_type: 'voice_note',
+                file_url: b64, file_name: `voice_${Date.now()}.webm`
+            })});
+            await loadMessages(); await loadConversations(true);
+        };
+
+        mediaRecorder.start();
+
+        // Timer
+        const btn = document.getElementById('voice-btn');
+        const timer = document.getElementById('voice-timer');
+        if (btn)   btn.classList.add('recording');
+        if (timer) timer.style.display = 'inline';
+
+        voiceInterval = setInterval(() => {
+            voiceSeconds++;
+            const m = Math.floor(voiceSeconds / 60);
+            const s = voiceSeconds % 60;
+            if (timer) timer.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        }, 1000);
+
+    } catch (err) {
+        alert('Microphone access denied. Please allow microphone access to send voice notes.');
+    }
+}
+
+function stopVoiceNote() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        clearInterval(voiceInterval);
+        const btn = document.getElementById('voice-btn');
+        const timer = document.getElementById('voice-timer');
+        if (btn)   btn.classList.remove('recording');
+        if (timer) timer.style.display = 'none';
+        voiceSeconds = 0;
+    }
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload  = e => resolve(e.target.result);
+        reader.readAsDataURL(blob);
+    });
+}
+
+// Show/hide voice btn based on input content
+document.addEventListener('DOMContentLoaded', () => {
+    const inp  = document.getElementById('msg-input');
+    const vbtn = document.getElementById('voice-btn');
+    const sbtn = document.getElementById('send-btn');
+    if (!inp) return;
+    inp.addEventListener('input', () => {
+        const hasText = inp.value.trim().length > 0;
+        if (vbtn) vbtn.style.display = hasText ? 'none'   : 'flex';
+        if (sbtn) sbtn.style.display = hasText ? 'flex'   : 'none';
+    });
+    // Initial state: show voice, hide send
+    if (vbtn) vbtn.style.display = 'flex';
+    if (sbtn) sbtn.style.display = 'none';
+});
+
+// ── FORWARD MESSAGE ───────────────────────────────────────────
+let forwardMsgId = null;
+
+function forwardMsg(msgId) {
+    forwardMsgId = msgId;
+    closeCtxMenu();
+    const list = document.getElementById('forward-list');
+    list.innerHTML = allStudents.map(s => `
+        <label class="forward-check">
+            <input type="checkbox" value="${s.id}" name="fwd-to">
+            <div class="contact-av" style="width:30px;height:30px;font-size:0.7rem;flex-shrink:0;">${getInitials(s.name)}</div>
+            <div>
+                <div style="font-size:0.85rem;font-weight:600;">${s.name}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">${s.department||''}</div>
+            </div>
+        </label>`).join('');
+    document.getElementById('forward-modal').classList.add('active');
+}
+
+async function submitForward() {
+    const to = [...document.querySelectorAll('input[name="fwd-to"]:checked')].map(i => parseInt(i.value));
+    const alertEl = document.getElementById('forward-alert');
+    if (!to.length) { showAlert(alertEl, 'Select at least one contact', 'error'); return; }
+    const res = await apiFetch(`/messages/${forwardMsgId}/forward`, {
+        method: 'POST',
+        body: JSON.stringify({ sender_id: student.id, to })
+    });
+    if (res.ok) {
+        showAlert(alertEl, `Forwarded to ${to.length} contact${to.length > 1 ? 's' : ''}!`, 'success');
+        setTimeout(() => closeModal('forward-modal'), 1000);
+    } else {
+        showAlert(alertEl, res.data.error || 'Failed to forward', 'error');
+    }
+}
+
+// ── REPORT USER ───────────────────────────────────────────────
+function reportThisUser() {
+    closeChatMenu();
+    document.getElementById('report-alert').innerHTML = '';
+    document.getElementById('report-reason').value = '';
+    document.getElementById('report-details').value = '';
+    document.getElementById('report-modal').classList.add('active');
+}
+
+async function submitReport() {
+    const reason  = document.getElementById('report-reason').value;
+    const details = document.getElementById('report-details').value.trim();
+    const alertEl = document.getElementById('report-alert');
+    if (!reason) { showAlert(alertEl, 'Please select a reason', 'error'); return; }
+    // Store report as notification/log on backend
+    await apiFetch('/notifications', { method: 'POST', body: JSON.stringify({
+        student_id: student.id,
+        type: 'system',
+        title: `Report submitted`,
+        body: `You reported ${currentChatName} for: ${reason}. ${details}`,
+        icon: '⚠️'
+    })});
+    showAlert(alertEl, 'Report submitted. Thank you for keeping the community safe.', 'success');
+    setTimeout(() => closeModal('report-modal'), 1500);
+}
+
+// ── DARK MODE ─────────────────────────────────────────────────
+let darkMode = localStorage.getItem('chatDarkMode') === 'true';
+
+function toggleDarkMode() {
+    darkMode = !darkMode;
+    localStorage.setItem('chatDarkMode', darkMode);
+    applyDarkMode();
+}
+
+function applyDarkMode() {
+    const layout = document.querySelector('.msg-layout');
+    const btn    = document.getElementById('theme-btn');
+    if (layout) layout.classList.toggle('dark-mode', darkMode);
+    if (btn)    btn.textContent = darkMode ? '☀️' : '🌙';
+}
+
+// ── NOTIFICATIONS PANEL ───────────────────────────────────────
+let notifPanelOpen = false;
+
+async function openNotifPanel() {
+    notifPanelOpen = !notifPanelOpen;
+    const panel = document.getElementById('notif-panel');
+    if (!panel) return;
+    panel.style.display = notifPanelOpen ? 'flex' : 'none';
+    if (notifPanelOpen) await loadNotifications();
+}
+
+async function loadNotifications() {
+    const res = await apiFetch(`/notifications/${student.id}`);
+    const el  = document.getElementById('notif-list');
+    if (!res.ok || !res.data.length) {
+        el.innerHTML = '<div style="padding:16px;text-align:center;opacity:0.4;font-size:0.8rem;">No notifications</div>';
+        return;
+    }
+    el.innerHTML = res.data.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="window.location.href='${n.action_url||'#'}'">
+            <span class="notif-icon">${n.icon || '🔔'}</span>
+            <div class="notif-body">
+                <div class="notif-title">${n.title || ''}</div>
+                <div class="notif-text">${n.body || ''}</div>
+                <div class="notif-time">${safeFormatTime(n.created_at)}</div>
+            </div>
+        </div>`).join('');
+}
+
+async function markAllNotifsRead() {
+    await apiFetch(`/notifications/${student.id}/read-all`, { method: 'PUT' });
+    await loadNotifications();
+    document.getElementById('notif-dot').style.display = 'none';
+}
+
+async function loadNotifBadge() {
+    const res = await apiFetch(`/notifications/${student.id}/unread`);
+    const dot = document.getElementById('notif-dot');
+    if (res.ok && res.data.count > 0) dot.style.display = 'block';
+    else dot.style.display = 'none';
+}
+
+// ── PIN / MUTE / ARCHIVE / BLOCK ─────────────────────────────
+function openChatMenu() {
+    const m = document.getElementById('chat-ctx-menu');
+    if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function closeChatMenu() {
+    const m = document.getElementById('chat-ctx-menu');
+    if (m) m.style.display = 'none';
+}
+
+async function pinThisChat() {
+    closeChatMenu();
+    const res = await apiFetch(`/chat-pref/${student.id}/${currentChatId}`, {
+        method: 'PUT', body: JSON.stringify({ is_pinned: 1 })
+    });
+    showAlert(document.createElement('div'), '', 'info'); // silent
+    if (res.ok) {
+        // Visual feedback in sidebar
+        const item = document.getElementById(`contact-${currentChatId}`);
+        if (item) {
+            const meta = item.querySelector('.contact-meta');
+            if (meta && !item.querySelector('.pin-icon')) {
+                const pin = document.createElement('span');
+                pin.className = 'pin-icon';
+                pin.textContent = '📌';
+                pin.style.cssText = 'font-size:0.7rem;';
+                meta.prepend(pin);
+            }
+        }
+        showToast('Chat pinned 📌');
+    }
+}
+
+async function muteThisChat() {
+    closeChatMenu();
+    const res = await apiFetch(`/chat-pref/${student.id}/${currentChatId}`, {
+        method: 'PUT', body: JSON.stringify({ is_muted: 1 })
+    });
+    if (res.ok) showToast('Conversation muted 🔇');
+}
+
+async function archiveThisChat() {
+    closeChatMenu();
+    const res = await apiFetch(`/chat-pref/${student.id}/${currentChatId}`, {
+        method: 'PUT', body: JSON.stringify({ is_archived: 1 })
+    });
+    if (res.ok) {
+        showToast('Chat archived 📦');
+        // Remove from sidebar
+        const item = document.getElementById(`contact-${currentChatId}`);
+        if (item) item.remove();
+        document.getElementById('chat-wrapper').style.display = 'none';
+        document.getElementById('no-chat').style.display      = 'flex';
+        currentChatId = null;
+    }
+}
+
+async function blockThisUser() {
+    closeChatMenu();
+    if (!confirm(`Block ${currentChatName}? They won't be able to send you messages.`)) return;
+    const res = await apiFetch(`/chat-pref/${student.id}/${currentChatId}`, {
+        method: 'PUT', body: JSON.stringify({ is_blocked: 1 })
+    });
+    if (res.ok) showToast(`${currentChatName} blocked 🚫`);
+}
+
+// ── SEARCH IN CHAT ────────────────────────────────────────────
+let searchVisible = false;
+
+function toggleSearchBar() {
+    searchVisible = !searchVisible;
+    const bar     = document.getElementById('msg-search-bar');
+    const results = document.getElementById('search-results');
+    if (!bar) return;
+    bar.style.display     = searchVisible ? 'flex' : 'none';
+    results.style.display = 'none';
+    if (searchVisible) {
+        document.getElementById('msg-search-input').focus();
+        document.getElementById('msg-search-input').value = '';
+    }
+}
+
+let searchDebounce = null;
+async function searchInChat() {
+    const q = document.getElementById('msg-search-input').value.trim();
+    const el = document.getElementById('search-results');
+    if (!q) { el.style.display = 'none'; return; }
+
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(async () => {
+        const res = await apiFetch(
+            `/messages/search?q=${encodeURIComponent(q)}&student_id=${student.id}&other_id=${currentChatId}`
+        );
+        if (!res.ok || !res.data.length) {
+            el.innerHTML = `<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:0.8rem;">No messages found for "${q}"</div>`;
+            el.style.display = 'block';
+            return;
+        }
+        // Highlight matches
+        const esc = s => s.replace(/</g,'&lt;');
+        const hi  = (text, q) => esc(text).replace(
+            new RegExp(`(${esc(q)})`, 'gi'),
+            `<span class="sri-highlight">$1</span>`
+        );
+        el.innerHTML = res.data.map(m => `
+            <div class="search-result-item" onclick="scrollToMsg(${m.message_id})">
+                <div class="sri-msg">${hi(m.message || '', q)}</div>
+                <div class="sri-meta">${m.sender_name} · ${safeFormatTime(m.timestamp)}</div>
+            </div>`).join('');
+        el.style.display = 'block';
+    }, 300);
+}
+
+function scrollToMsg(msgId) {
+    document.getElementById('search-results').style.display = 'none';
+    // Re-highlight in chat
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.background = '#fef7e0';
+        setTimeout(() => el.style.background = '', 2000);
+    }
+}
+
+// ── TOAST NOTIFICATION ────────────────────────────────────────
+function showToast(msg, duration = 2500) {
+    let toast = document.getElementById('chat-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'chat-toast';
+        toast.style.cssText = `
+            position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+            background:rgba(0,0,0,0.78); color:white; padding:9px 20px;
+            border-radius:24px; font-size:0.85rem; z-index:9999;
+            opacity:0; transition:opacity 0.2s; pointer-events:none;
+            white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.25);`;
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.style.opacity = '0', duration);
+}
+
+// ── Add forward to context menu ───────────────────────────────
+// Override showCtxMenu to include Forward option
+const _origCtxMenu = showCtxMenu;
+window.showCtxMenu = function(e, msgId, side) {
+    e.preventDefault(); closeCtxMenu();
+    const menu = document.createElement('div');
+    menu.className = 'msg-ctx'; menu.id = 'ctx-menu';
+    menu.style.cssText = `position:fixed;top:${e.clientY}px;left:${e.clientX}px;`;
+    menu.innerHTML = `
+        <button onclick="replyMsg(${msgId})">↩ Reply</button>
+        <button onclick="copyMsg(${msgId})">📋 Copy</button>
+        <button onclick="forwardMsg(${msgId})">↗️ Forward</button>
+        ${side==='sent' ? `
+        <button onclick="editMsg(${msgId})">✏️ Edit</button>
+        <button class="danger" onclick="deleteMsg(${msgId},'everyone')">🗑️ Delete for Everyone</button>` : ''}
+        <button onclick="deleteMsg(${msgId},'me')">🗑️ Delete for Me</button>`;
+    document.body.appendChild(menu);
+    ctxMenuEl = menu;
+};
+
+// ── Extended init for new features ───────────────────────────
+const _origInit = init;
+window.addEventListener('DOMContentLoaded', () => {
+    // Apply saved dark mode
+    applyDarkMode();
+
+    // Load notification badge count
+    if (typeof loadNotifBadge === 'function') loadNotifBadge();
+
+    // Close chat menu on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#chat-menu-btn') && !e.target.closest('.chat-ctx-menu'))
+            closeChatMenu();
+        if (!e.target.closest('#notif-bell') && !e.target.closest('.notif-panel'))
+            document.getElementById('notif-panel') && (document.getElementById('notif-panel').style.display='none', notifPanelOpen=false);
+    });
+});
+
+// Poll notification badge every 30s
+setInterval(() => {
+    if (typeof loadNotifBadge === 'function') loadNotifBadge();
+}, 30000);

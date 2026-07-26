@@ -33,10 +33,6 @@
 .domain-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:600; border:1px solid var(--border); background:white; margin:3px; cursor:pointer; transition:all 0.2s; }
 .domain-badge:hover { border-color:var(--primary); background:var(--primary-light); color:var(--primary); }
 .domain-badge.selected { background:var(--primary); color:white; border-color:var(--primary); }
-
-/* Add domain panel */
-.add-domain-panel { margin-top:12px; padding:14px; background:white; border-radius:var(--radius-sm); border:1px solid var(--border); display:none; }
-.add-domain-panel.open { display:block; }
 .validation-msg { font-size:0.8rem; margin-top:4px; display:none; }
 .validation-msg.error { color:var(--danger); display:block; }
 .validation-msg.success { color:var(--secondary); display:block; }
@@ -238,26 +234,6 @@ async function addNewSkill() {
         selectDomain(selectedDomainId, allDomains.find(d=>d.domain_id===selectedDomainId)?.domain_name||'');
     } else {
         showAlert(alertBox, res.data.error || 'Failed to create skill', 'error');
-    }
-}
-
-// ── Add new domain ────────────────────────────────────────────
-function toggleAddDomain() {
-    document.getElementById('add-domain-panel').classList.toggle('open');
-}
-async function createDomain() {
-    const name = document.getElementById('new-domain-name').value.trim();
-    const icon = document.getElementById('new-domain-icon').value.trim() || '📚';
-    if (!name) { showAlert(document.getElementById('alert-box'),'Enter domain name','error'); return; }
-
-    const res = await apiFetch('/domains',{method:'POST',body:JSON.stringify({domain_name:name,domain_icon:icon})});
-    if (res.ok) {
-        showAlert(document.getElementById('alert-box'),`Domain "${name}" created!`,'success');
-        document.getElementById('new-domain-name').value = '';
-        document.getElementById('add-domain-panel').classList.remove('open');
-        await loadData();
-    } else {
-        showAlert(document.getElementById('alert-box'), res.data.error||'Failed','error');
     }
 }
 

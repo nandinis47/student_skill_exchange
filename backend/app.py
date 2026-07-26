@@ -1126,3 +1126,212 @@ def get_student_full(student_id):
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
 
+
+# ============================================
+# CHAT PREFERENCES — pin, mute, archive, block
+# ============================================
+
+def _get_pref(student_id, other_id, create=True):
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT * FROM chat_prefs WHERE student_id=%s AND other_id=%s", (student_id, other_id))
+    row = cur.fetchone()
+    if not row and create:
+        cur.execute("INSERT INTO chat_prefs (student_id,other_id) VALUES (%s,%s)", (student_id, other_id))
+        conn.commit()
+        cur.execute("SELECT * FROM chat_prefs WHERE student_id=%s AND other_id=%s", (student_id, other_id))
+        row = cur.fetchone()
+    cur.close(); conn.close()
+    return row
+
+@app.route('/api/chat-pref/<int:student_id>/<int:other_id>', methods=['GET'])
+def get_chat_pref(student_id, other_id):
+    row = _get_pref(student_id, other_id, create=False)
+    return jsonify(row or {'is_pinned':0,'is_muted':0,'is_archived':0,'is_blocked':0})
+
+@app.route('/api/chat-pref/<int:student_id>/<int:other_id>', methods=['PUT'])
+def update_chat_pref(student_id, other_id):
+    data = request.json
+    _get_pref(student_id, other_id, create=True)   # ensure row exists
+    conn = get_db(); cur = conn.cursor()
+    fields = ['is_pinned','is_muted','is_archived','is_blocked']
+    updates = {f: data[f] for f in fields if f in data}
+    if not updates:
+        cur.close(); conn.close()
+        return jsonify({'error': 'Nothing to update'}), 400
+    blocked_at_sql = ", blocked_at=NOW()" if updates.get('is_blocked') else ""
+    set_clause = ', '.join(f"{k}=%s" for k in updates)
+    cur.execute(f"UPDATE chat_prefs SET {set_clause}{blocked_at_sql} WHERE student_id=%s AND other_id=%s",
+                list(updates.values()) + [student_id, other_id])
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Preference updated'})
+
+@app.route('/api/chat-pref/<int:student_id>/pinned', methods=['GET'])
+def get_pinned_chats(student_id):
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("""SELECT cp.*, s.name, s.email, s.department FROM chat_prefs cp
+        JOIN students s ON cp.other_id=s.id
+        WHERE cp.student_id=%s AND cp.is_pinned=1""", (student_id,))
+    rows = cur.fetchall(); cur.close(); conn.close()
+    return jsonify(rows)
+
+@app.route('/api/chat-pref/<int:student_id>/archived', methods=['GET'])
+def get_archived_chats(student_id):
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("""SELECT cp.*, s.name FROM chat_prefs cp
+        JOIN students s ON cp.other_id=s.id
+        WHERE cp.student_id=%s AND cp.is_archived=1""", (student_id,))
+    rows = cur.fetchall(); cur.close(); conn.close()
+    return jsonify(rows)
+
+# ============================================
+# NOTIFICATIONS
+# ============================================
+
+@app.route('/api/notifications/<int:student_id>', methods=['GET'])
+def get_notifications(student_id):
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("""SELECT * FROM notifications WHERE student_id=%s ORDER BY created_at DESC LIMIT 50""",
+                (student_id,))
+    rows = cur.fetchall(); cur.close(); conn.close()
+    return jsonify(rows)
+
+@app.route('/api/notifications/<int:student_id>/unread', methods=['GET'])
+def get_unread_notif_count(student_id):
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT COUNT(*) AS cnt FROM notifications WHERE student_id=%s AND is_read=0", (student_id,))
+    cnt = cur.fetchone()['cnt']; cur.close(); conn.close()
+    return jsonify({'count': cnt})
+
+@app.route('/api/notifications/<int:student_id>/read-all', methods=['PUT'])
+def mark_all_notifs_read(student_id):
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("UPDATE notifications SET is_read=1 WHERE student_id=%s", (student_id,))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'All marked read'})
+
+@app.route('/api/notifications', methods=['POST'])
+def create_notification():
+    data = request.json
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("""INSERT INTO notifications (student_id,type,title,body,icon,action_url)
+        VALUES (%s,%s,%s,%s,%s,%s)""",
+        (data['student_id'], data.get('type','message'), data.get('title',''),
+         data.get('body',''), data.get('icon','🔔'), data.get('action_url','')))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Created'}), 201
+
+# ============================================
+# FORWARD MESSAGE
+# ============================================
+
+@app.route('/api/messages/<int:msg_id>/forward', methods=['POST'])
+def forward_message(msg_id):
+    data = request.json
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT * FROM messages WHERE message_id=%s", (msg_id,))
+    orig = cur.fetchone()
+    if not orig:
+        cur.close(); conn.close()
+        return jsonify({'error': 'Message not found'}), 404
+    # Forward to new recipients
+    for receiver_id in data.get('to', []):
+        cur.execute("""INSERT INTO messages
+            (sender_id,receiver_id,message,message_type,file_url,file_name,is_forwarded,forward_from_id)
+            VALUES (%s,%s,%s,%s,%s,%s,1,%s)""",
+            (data['sender_id'], receiver_id, orig['message'],
+             orig['message_type'], orig.get('file_url'), orig.get('file_name'), msg_id))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': f'Forwarded to {len(data.get("to",[]))} recipients'})
+
+# ============================================
+# PIN MESSAGE
+# ============================================
+
+@app.route('/api/messages/<int:msg_id>/pin', methods=['PUT'])
+def pin_message(msg_id):
+    data = request.json
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("UPDATE messages SET is_pinned=%s WHERE message_id=%s", (data.get('pin',1), msg_id))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Pinned' if data.get('pin',1) else 'Unpinned'})
+
+@app.route('/api/messages/pinned/<int:student_id>/<int:other_id>', methods=['GET'])
+def get_pinned_messages(student_id, other_id):
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    cur.execute("""SELECT m.*, s.name AS sender_name FROM messages m
+        JOIN students s ON m.sender_id=s.id
+        WHERE is_pinned=1 AND (
+            (sender_id=%s AND receiver_id=%s) OR (sender_id=%s AND receiver_id=%s))
+        ORDER BY m.timestamp DESC""", (student_id,other_id,other_id,student_id))
+    rows = cur.fetchall(); cur.close(); conn.close()
+    return jsonify(rows)
+
+# ============================================
+# SEARCH MESSAGES
+# ============================================
+
+@app.route('/api/messages/search', methods=['GET'])
+def search_messages():
+    q          = request.args.get('q', '')
+    student_id = request.args.get('student_id')
+    other_id   = request.args.get('other_id')
+    if not q or not student_id:
+        return jsonify([])
+    conn = get_db(); cur = conn.cursor(dictionary=True)
+    params = [f'%{q}%', student_id, student_id]
+    sql = """SELECT m.*, s.name AS sender_name FROM messages m
+        JOIN students s ON m.sender_id=s.id
+        WHERE m.message LIKE %s AND (m.sender_id=%s OR m.receiver_id=%s)"""
+    if other_id:
+        sql += " AND (m.sender_id=%s OR m.receiver_id=%s)"
+        params += [other_id, other_id]
+    sql += " ORDER BY m.timestamp DESC LIMIT 30"
+    cur.execute(sql, params)
+    rows = cur.fetchall(); cur.close(); conn.close()
+    return jsonify(rows)
+
+# ============================================
+# GROUP ADMIN FEATURES
+# ============================================
+
+@app.route('/api/groups/<int:group_id>/promote/<int:target_id>', methods=['PUT'])
+def promote_member(group_id, target_id):
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("UPDATE group_members SET role='admin' WHERE group_id=%s AND student_id=%s", (group_id, target_id))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Promoted to admin'})
+
+@app.route('/api/groups/<int:group_id>/demote/<int:target_id>', methods=['PUT'])
+def demote_member(group_id, target_id):
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("UPDATE group_members SET role='member' WHERE group_id=%s AND student_id=%s", (group_id, target_id))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Demoted to member'})
+
+@app.route('/api/groups/<int:group_id>', methods=['PUT'])
+def update_group(group_id):
+    data = request.json
+    conn = get_db(); cur = conn.cursor()
+    fields, vals = [], []
+    for f in ['group_name','description','who_can_send','who_can_edit']:
+        if f in data:
+            fields.append(f'{f}=%s'); vals.append(data[f])
+    if not fields:
+        cur.close(); conn.close()
+        return jsonify({'error': 'Nothing to update'}), 400
+    cur.execute(f"UPDATE chat_groups SET {', '.join(fields)} WHERE group_id=%s", vals + [group_id])
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Group updated'})
+
+@app.route('/api/groups/<int:group_id>', methods=['DELETE'])
+def delete_group(group_id):
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("DELETE FROM chat_groups WHERE group_id=%s", (group_id,))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'message': 'Group deleted'})
+
+# Update /api/messages to store is_read, is_forwarded fields
+# (already handled by existing GET with extra columns)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
