@@ -275,6 +275,44 @@ function renderMsg(m) {
         body=`<div class="msg-file"><span class="msg-file-icon">${ic}</span><div class="msg-file-info"><b>${m.file_name||'File'}</b>${m.file_url?`<a href="${m.file_url}" target="_blank" style="color:${isSent?'#fff':'var(--primary)'};">Open →</a>`:''}</div></div>`;
     }
     else if (type==='sticker') { return `<div class="msg-row ${side}"><div class="msg-group"><div style="font-size:2.5rem;padding:4px;">${m.message}</div><div class="msg-meta"><span>${time}</span>${tick}</div></div></div>`; }
+    else if (type==='voice_note') {
+        // Unique ID for this audio element so play/pause can find it
+        const audioId = `audio-${m.message_id}`;
+        const dur = m.message ? m.message.replace(/[^0-9:]/g,'') : '0:00';
+        body = `
+        <div class="voice-bubble">
+            <button class="vb-play-btn" onclick="toggleVoicePlay('${audioId}',this)" title="Play / Pause">▶</button>
+            <div class="vb-body">
+                <div class="vb-waveform" id="wave-${audioId}">
+                    <div class="vb-bar" style="height:6px;"></div>
+                    <div class="vb-bar" style="height:12px;"></div>
+                    <div class="vb-bar" style="height:16px;"></div>
+                    <div class="vb-bar" style="height:10px;"></div>
+                    <div class="vb-bar" style="height:14px;"></div>
+                    <div class="vb-bar" style="height:8px;"></div>
+                    <div class="vb-bar" style="height:12px;"></div>
+                    <div class="vb-bar" style="height:6px;"></div>
+                    <div class="vb-bar" style="height:10px;"></div>
+                    <div class="vb-bar" style="height:14px;"></div>
+                    <div class="vb-bar" style="height:8px;"></div>
+                    <div class="vb-bar" style="height:12px;"></div>
+                </div>
+                <div class="vb-progress-track" onclick="seekVoice(event,'${audioId}')">
+                    <div class="vb-progress-fill" id="fill-${audioId}"></div>
+                </div>
+                <div class="vb-meta">
+                    <span class="vb-dur" id="dur-${audioId}">${dur}</span>
+                    <span class="vb-label">🎙️ Voice note</span>
+                </div>
+            </div>
+            <audio id="${audioId}" src="${m.file_url||''}"
+                   ontimeupdate="updateVoiceProgress('${audioId}')"
+                   onended="voiceEnded('${audioId}',this.closest('.voice-bubble').querySelector('.vb-play-btn'))"
+                   onloadedmetadata="setVoiceDuration('${audioId}',this.duration)"
+                   preload="metadata" style="display:none;"></audio>
+        </div>`;
+        return `<div class="msg-row ${side}"><div class="msg-group"><div class="msg-bubble vb-bubble">${body}</div><div class="msg-meta"><span>${time}</span>${tick}</div></div></div>`;
+    }
     else if (type==='location') { body=`<div class="msg-location" onclick="openLocation(${m.location_lat},${m.location_lng})">📍 Location · Tap to view</div>`; }
     else if (type==='poll') {
         try {
@@ -733,11 +771,14 @@ async function startVoiceNote() {
             const blob   = new Blob(voiceChunks, { type: 'audio/webm' });
             const b64    = await blobToBase64(blob);
             stream.getTracks().forEach(t => t.stop());
+            // Format duration as m:ss for display in the bubble
+            const durStr = formatAudioTime(voiceSeconds);
             await apiFetch('/messages', { method:'POST', body: JSON.stringify({
                 sender_id: student.id, receiver_id: currentChatId,
-                message: `🎙️ Voice note (${voiceSeconds}s)`,
+                message: durStr,                          // stored as duration text
                 message_type: 'voice_note',
-                file_url: b64, file_name: `voice_${Date.now()}.webm`
+                file_url: b64,
+                file_name: `voice_${Date.now()}.webm`
             })});
             await loadMessages(); await loadConversations(true);
         };
@@ -748,7 +789,7 @@ async function startVoiceNote() {
         const btn = document.getElementById('voice-btn');
         const timer = document.getElementById('voice-timer');
         if (btn)   btn.classList.add('recording');
-        if (timer) timer.style.display = 'inline';
+        if (timer) { timer.style.display = 'block'; }
 
         voiceInterval = setInterval(() => {
             voiceSeconds++;
@@ -773,7 +814,6 @@ function stopVoiceNote() {
         voiceSeconds = 0;
     }
 }
-
 function blobToBase64(blob) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -782,7 +822,79 @@ function blobToBase64(blob) {
     });
 }
 
-// Show/hide voice btn based on input content
+// ── VOICE NOTE PLAYER HELPERS ────────────────────────────────
+
+function toggleVoicePlay(audioId, btn) {
+    const audio = document.getElementById(audioId);
+    if (!audio) return;
+    // Pause any other playing audio first
+    document.querySelectorAll('audio').forEach(a => {
+        if (a.id !== audioId && !a.paused) {
+            a.pause();
+            const waveId  = 'wave-' + a.id;
+            const waveEl  = document.getElementById(waveId);
+            if (waveEl) waveEl.querySelectorAll('.vb-bar').forEach(b => b.classList.remove('playing'));
+            const otherBtn = a.closest('.voice-bubble')?.querySelector('.vb-play-btn');
+            if (otherBtn) otherBtn.textContent = '▶';
+        }
+    });
+    const waveEl = document.getElementById('wave-' + audioId);
+    if (audio.paused) {
+        audio.play();
+        btn.textContent = '⏸';
+        if (waveEl) waveEl.querySelectorAll('.vb-bar').forEach(b => b.classList.add('playing'));
+    } else {
+        audio.pause();
+        btn.textContent = '▶';
+        if (waveEl) waveEl.querySelectorAll('.vb-bar').forEach(b => b.classList.remove('playing'));
+    }
+}
+
+function updateVoiceProgress(audioId) {
+    const audio = document.getElementById(audioId);
+    const fill  = document.getElementById('fill-' + audioId);
+    const durEl = document.getElementById('dur-' + audioId);
+    if (!audio || !fill) return;
+    const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+    fill.style.width = pct + '%';
+    // Show current time while playing
+    if (durEl) durEl.textContent = formatAudioTime(audio.currentTime);
+}
+
+function voiceEnded(audioId, btn) {
+    const fill   = document.getElementById('fill-' + audioId);
+    const audio  = document.getElementById(audioId);
+    const waveEl = document.getElementById('wave-' + audioId);
+    if (fill)   fill.style.width = '0%';
+    if (btn)    btn.textContent  = '▶';
+    if (waveEl) waveEl.querySelectorAll('.vb-bar').forEach(b => b.classList.remove('playing'));
+    // Reset display to total duration
+    const durEl = document.getElementById('dur-' + audioId);
+    if (durEl && audio) durEl.textContent = formatAudioTime(audio.duration || 0);
+}
+
+function setVoiceDuration(audioId, secs) {
+    const durEl = document.getElementById('dur-' + audioId);
+    if (durEl && secs && !isNaN(secs)) durEl.textContent = formatAudioTime(secs);
+}
+
+function seekVoice(e, audioId) {
+    const audio = document.getElementById(audioId);
+    const track = e.currentTarget;
+    if (!audio || !audio.duration) return;
+    const rect = track.getBoundingClientRect();
+    const x    = e.clientX - rect.left;
+    audio.currentTime = (x / rect.width) * audio.duration;
+}
+
+function formatAudioTime(secs) {
+    if (!secs || isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// Show/hide voice btn based on input content — mic stays inside input, send outside
 document.addEventListener('DOMContentLoaded', () => {
     const inp  = document.getElementById('msg-input');
     const vbtn = document.getElementById('voice-btn');
@@ -790,12 +902,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!inp) return;
     inp.addEventListener('input', () => {
         const hasText = inp.value.trim().length > 0;
-        if (vbtn) vbtn.style.display = hasText ? 'none'   : 'flex';
-        if (sbtn) sbtn.style.display = hasText ? 'flex'   : 'none';
+        // When typing: hide mic (or dim it), show send button in active state
+        if (vbtn) vbtn.style.opacity = hasText ? '0.3' : '1';
+        if (sbtn) {
+            sbtn.style.background    = hasText ? 'var(--primary)' : '#c8d6e5';
+            sbtn.style.cursor        = hasText ? 'pointer' : 'default';
+            sbtn.style.boxShadow     = hasText ? '0 2px 8px rgba(26,115,232,0.3)' : 'none';
+        }
     });
-    // Initial state: show voice, hide send
-    if (vbtn) vbtn.style.display = 'flex';
-    if (sbtn) sbtn.style.display = 'none';
 });
 
 // ── FORWARD MESSAGE ───────────────────────────────────────────

@@ -240,6 +240,42 @@ function formatTime(dateStr) {
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ============================================
+// PROFILE PICTURE HELPERS
+// ============================================
+
+/**
+ * Returns the URL of the student's current profile picture or avatar.
+ * Priority: uploaded photo > avatar emoji > initials fallback
+ */
+function getProfileDisplay(student) {
+    if (!student) return null;
+    if (student.profile_pic) {
+        // Uploaded photo — prepend backend base if relative path
+        return { type: 'img', src: student.profile_pic.startsWith('/') ? `http://localhost:5000${student.profile_pic}` : student.profile_pic };
+    }
+    if (student.avatar_key) {
+        return { type: 'emoji', emoji: student.avatar_key };
+    }
+    return { type: 'initials', text: getInitials(student.name) };
+}
+
+/**
+ * Renders the profile display into any element.
+ * el — the DOM element (div/span) to render into
+ */
+function renderProfileInto(el, student) {
+    if (!el || !student) return;
+    const display = getProfileDisplay(student);
+    if (display.type === 'img') {
+        el.innerHTML = `<img src="${display.src}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${getInitials(student.name)}'">`;
+    } else if (display.type === 'emoji') {
+        el.innerHTML = `<span style="font-size:1.4rem;line-height:1;">${display.emoji}</span>`;
+    } else {
+        el.textContent = display.text;
+    }
+}
+
 // Set active nav link
 function setActiveNav(page) {
     document.querySelectorAll('.navbar-nav a').forEach(a => {
@@ -247,12 +283,12 @@ function setActiveNav(page) {
     });
 }
 
-// Render navbar user info
+// Render navbar user info — shows pic/avatar/initials
 function renderNavUser() {
     const student = getCurrentStudent();
     if (!student) return;
-    const el = document.getElementById('nav-user-name');
-    const av = document.getElementById('nav-avatar');
-    if (el) el.textContent = student.name.split(' ')[0];
-    if (av) av.textContent = getInitials(student.name);
+    const nameEl   = document.getElementById('nav-user-name');
+    const avatarEl = document.getElementById('nav-avatar');
+    if (nameEl)   nameEl.textContent = student.name.split(' ')[0];
+    if (avatarEl) renderProfileInto(avatarEl, student);
 }

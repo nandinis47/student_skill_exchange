@@ -86,6 +86,7 @@ def login():
         if student:
             session['student_id'] = student['id']
             student.pop('password')
+            # profile_pic and avatar_key are already in SELECT * — keep them in response
             return jsonify({'message': 'Login successful', 'student': student}), 200
         return jsonify({'error': 'Invalid credentials'}), 401
     finally:
@@ -320,7 +321,10 @@ def get_messages(student_id):
     if other_id:
         cursor.execute("""
             SELECT m.message_id, s1.name AS sender_name, s2.name AS receiver_name,
-                   m.message, m.timestamp, m.sender_id, m.receiver_id
+                   m.message, m.timestamp, m.sender_id, m.receiver_id,
+                   m.message_type, m.file_url, m.file_name,
+                   m.is_read, m.is_deleted, m.edited_at,
+                   m.reply_to_id, m.is_forwarded, m.location_lat, m.location_lng
             FROM messages m
             JOIN students s1 ON m.sender_id = s1.id
             JOIN students s2 ON m.receiver_id = s2.id
@@ -331,7 +335,10 @@ def get_messages(student_id):
     else:
         cursor.execute("""
             SELECT m.message_id, s1.name AS sender_name, s2.name AS receiver_name,
-                   m.message, m.timestamp, m.sender_id, m.receiver_id
+                   m.message, m.timestamp, m.sender_id, m.receiver_id,
+                   m.message_type, m.file_url, m.file_name,
+                   m.is_read, m.is_deleted, m.edited_at,
+                   m.reply_to_id, m.is_forwarded
             FROM messages m
             JOIN students s1 ON m.sender_id = s1.id
             JOIN students s2 ON m.receiver_id = s2.id

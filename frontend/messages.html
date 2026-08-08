@@ -151,14 +151,19 @@
                     <button onclick="clearReply()">✕</button>
                 </div>
 
-                <input type="text" id="msg-input" class="msg-input" placeholder="Type a message…"
-                       oninput="onTyping()" onkeyup="if(event.key==='Enter')sendMsg()">
-                <!-- Voice note button (shows when input empty, send btn when typing) -->
-                <span class="voice-timer" id="voice-timer" style="display:none;">0:00</span>
-                <button class="icon-btn voice-btn" id="voice-btn"
-                        onmousedown="startVoiceNote()" onmouseup="stopVoiceNote()"
-                        ontouchstart="startVoiceNote()" ontouchend="stopVoiceNote()"
-                        title="Hold to record voice note">🎙️</button>
+                <!-- Input field wrapper: mic sits inside on the right -->
+                <div class="msg-input-wrap">
+                    <input type="text" id="msg-input" class="msg-input" placeholder="Type a message…"
+                           oninput="onTyping()" onkeyup="if(event.key==='Enter')sendMsg()">
+                    <!-- 🎙️ Voice button — INSIDE the text field on the right -->
+                    <span class="voice-timer" id="voice-timer" style="display:none;">0:00</span>
+                    <button class="voice-btn-inline" id="voice-btn"
+                            onmousedown="startVoiceNote()" onmouseup="stopVoiceNote()"
+                            ontouchstart="startVoiceNote()" ontouchend="stopVoiceNote()"
+                            title="Hold to record voice note">🎙️</button>
+                </div>
+
+                <!-- ➤ Send button — OUTSIDE the text field, separate action button -->
                 <button class="send-btn" id="send-btn" onclick="sendMsg()">➤</button>
             </div>
 
