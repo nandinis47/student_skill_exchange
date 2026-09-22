@@ -41,7 +41,7 @@ _init_firebase_admin()
 GOOGLE_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo'
 
 app = Flask(__name__)
-app.secret_key = 'sse_secret_key_2024'
+app.secret_key = os.getenv('SECRET_KEY', 'local-dev-secret-change-me')
 CORS(app, supports_credentials=True, origins=[
     'http://localhost:8080',
     'http://127.0.0.1:8080',
