@@ -465,7 +465,7 @@ async function loadProfile() {
     const avatarEl = document.getElementById('p-avatar');
     if (s.profile_pic) {
         // Uploaded photo — serve via backend
-        const src = s.profile_pic.startsWith('/') ? `http://localhost:5000${s.profile_pic}` : s.profile_pic;
+        const src = s.profile_pic.startsWith('/') ? `${window.location.protocol}//${window.location.hostname}:5000${s.profile_pic}` : s.profile_pic;
         avatarEl.innerHTML = `<img src="${src}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
             onerror="this.parentElement.textContent='${getInitials(s.name)}'">`;
     } else if (s.avatar_key) {
