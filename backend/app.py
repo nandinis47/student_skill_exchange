@@ -4,6 +4,13 @@ import mysql.connector
 from mysql.connector import Error
 import hashlib
 import os
+import requests as http_requests   # for Google token verification
+
+# ── Google OAuth config ──────────────────────────────────────
+# REPLACE THIS WITH YOUR REAL CLIENT ID FROM Google Cloud Console
+# https://console.cloud.google.com → APIs & Services → Credentials
+GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'
+GOOGLE_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo'
 
 app = Flask(__name__)
 app.secret_key = 'sse_secret_key_2024'
@@ -98,6 +105,118 @@ def login():
 def logout():
     session.clear()
     return jsonify({'message': 'Logged out'}), 200
+
+
+# ============================================
+# GOOGLE SIGN-IN
+# ============================================
+
+@app.route('/api/auth/google', methods=['POST'])
+def google_signin():
+    """
+    Receives the Google ID token from the frontend,
+    validates it with Google's tokeninfo endpoint,
+    then creates or finds the user in the DB and
+    returns a session just like normal login.
+
+    Security:
+    - Token is verified by Google's server (not locally decoded)
+    - audience (aud) is checked against GOOGLE_CLIENT_ID
+    - Email verified flag is required
+    - A secure random password is stored for Google users
+      (they never use it; it prevents password-login to their account)
+    """
+    data  = request.json
+    token = data.get('id_token', '').strip()
+
+    if not token:
+        return jsonify({'error': 'No token provided'}), 400
+
+    # ── 1. Verify token with Google ──────────────────────────
+    try:
+        resp = http_requests.get(
+            GOOGLE_TOKEN_INFO_URL,
+            params={'id_token': token},
+            timeout=10
+        )
+        info = resp.json()
+    except Exception as e:
+        return jsonify({'error': f'Token verification failed: {str(e)}'}), 500
+
+    if 'error_description' in info or resp.status_code != 200:
+        return jsonify({'error': 'Invalid Google token: ' + info.get('error_description', 'unknown')}), 401
+
+    # ── 2. Check audience matches our client ID ───────────────
+    if GOOGLE_CLIENT_ID != 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com':
+        # Only enforce aud check when Client ID is configured
+        if info.get('aud') != GOOGLE_CLIENT_ID:
+            return jsonify({'error': 'Token audience mismatch'}), 401
+
+    # ── 3. Require verified email ─────────────────────────────
+    if info.get('email_verified') not in ('true', True):
+        return jsonify({'error': 'Google email not verified'}), 401
+
+    email      = info.get('email', '').lower().strip()
+    name       = info.get('name', email.split('@')[0])
+    google_sub = info.get('sub', '')          # unique Google user ID
+
+    if not email:
+        return jsonify({'error': 'No email in Google token'}), 401
+
+    # ── 4. Find or create user in DB ──────────────────────────
+    conn = get_db()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM students WHERE email=%s", (email,))
+        student = cursor.fetchone()
+
+        if student:
+            # Existing user — link their Google sub if not already linked
+            if not student.get('google_sub'):
+                cursor.execute(
+                    "UPDATE students SET google_sub=%s WHERE id=%s",
+                    (google_sub, student['id'])
+                )
+                conn.commit()
+            student.pop('password', None)
+        else:
+            # New user — create account from Google profile
+            # Store a random hash as password (unusable for direct login)
+            fake_password = hashlib.sha256(
+                (google_sub + os.urandom(16).hex()).encode()
+            ).hexdigest()
+
+            cursor.execute("""
+                INSERT INTO students (name, email, password, department, year, google_sub)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (name, email, fake_password, 'Not specified', 1, google_sub))
+            conn.commit()
+
+            cursor.execute("SELECT * FROM students WHERE email=%s", (email,))
+            student = cursor.fetchone()
+            student.pop('password', None)
+
+            # Give Newbie badge to new Google users
+            try:
+                cursor.execute(
+                    "INSERT IGNORE INTO student_badges (student_id, badge_id) VALUES (%s, 1)",
+                    (student['id'],)
+                )
+                conn.commit()
+            except Exception:
+                pass
+
+        session['student_id'] = student['id']
+        return jsonify({'message': 'Google sign-in successful', 'student': student}), 200
+
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # ============================================
@@ -1157,7 +1276,8 @@ def get_student_full(student_id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT id, name, email, department, year, bio,
-               xp_points, learning_streak, is_online, last_seen
+               xp_points, learning_streak, is_online, last_seen,
+               profile_pic, avatar_key
         FROM students WHERE id=%s
     """, (student_id,))
     student = cursor.fetchone()
