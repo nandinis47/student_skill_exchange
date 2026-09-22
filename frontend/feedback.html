@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Give Feedback - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/feedback.css?v=1.0">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="dashboard.html" class="navbar-brand">
+            <div class="logo-icon">🎓</div> SkillX
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+            <li><a href="skills.html" data-page="skills">⚡ My Skills</a></li>
+            <li><a href="search.html" data-page="search">🔍 Search</a></li>
+            <li><a href="requests.html" data-page="requests">🔄 Requests</a></li>
+            <li><a href="messages.html" data-page="messages">💬 Messages</a></li>
+            <li><a href="profile.html" data-page="profile">👤 Profile</a></li>
+        </ul>
+        <div class="navbar-user">
+            <div class="user-dropdown">
+                <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true"
+                    aria-expanded="false">
+                    <div class="user-avatar" id="nav-avatar">?</div>
+                    <span id="nav-user-name" class="nav-user-name-text"></span>
+                    <span class="dropdown-chevron">▼</span>
+                </button>
+                <div class="user-dropdown-menu" id="user-dropdown-menu">
+                    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                    <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                    <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span>
+                        Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="feedback-container">
+        <div class="feedback-header">
+            <h1>💬 Give Feedback</h1>
+            <p>Help us improve SkillX! Share your experience, report bugs, or suggest new features.</p>
+        </div>
+
+        <!-- Feedback Submission Card -->
+        <div class="feedback-card">
+            <h2>✨ Share Your Feedback</h2>
+
+            <div id="feedback-form-alert"></div>
+
+            <form onsubmit="handleSubmitFeedback(event)">
+                <!-- Star Rating Widget -->
+                <div class="form-group">
+                    <label>Overall Experience Rating</label>
+                    <div class="star-rating-container">
+                        <div class="star-rating">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <span class="rating-label" id="rating-text">Click to rate (1–5 stars)</span>
+                    </div>
+                </div>
+
+                <!-- Category Selection -->
+                <div class="form-group">
+                    <label for="feedback-category">Category</label>
+                    <select id="feedback-category" class="form-control" required>
+                        <option value="">Select feedback topic...</option>
+                        <option value="General">💬 General Feedback</option>
+                        <option value="Bug Report">🐛 Bug Report</option>
+                        <option value="Feature Request">💡 Feature Request</option>
+                        <option value="Smart Match">⚡ Smart Match Algorithm</option>
+                        <option value="Session">⏱️ Learning Sessions</option>
+                        <option value="Other">❓ Other</option>
+                    </select>
+                </div>
+
+                <!-- Feedback Message -->
+                <div class="form-group">
+                    <label for="feedback-message">Your Feedback</label>
+                    <textarea id="feedback-message" class="form-control" rows="4" required
+                        placeholder="What did you like or what can we improve? Provide details..."></textarea>
+                </div>
+
+                <!-- Optional Contact Permission Checkbox -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="feedback-contact">
+                        <span>Allow SkillX team to contact me about this feedback</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit Feedback</button>
+            </form>
+        </div>
+
+        <!-- My Previous Feedback Section -->
+        <div class="history-card" id="my-feedback-card" style="display:none;">
+            <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-dark); margin-bottom:16px;">📝 My Previous
+                Feedback</h2>
+            <div id="feedback-history-list"></div>
+        </div>
+        <footer class="app-footer">
+            <div class="footer-container">
+                <div class="footer-links">
+                    <a href="dashboard.html" class="footer-brand">SkillX</a>
+                    <span class="footer-sep">|</span>
+                    <a href="dashboard.html">Dashboard</a>
+                    <span class="footer-sep">|</span>
+                    <a href="skills.html">My Skills</a>
+                    <span class="footer-sep">|</span>
+                    <a href="search.html">Search</a>
+                    <span class="footer-sep">|</span>
+                    <a href="requests.html">Requests</a>
+                    <span class="footer-sep">|</span>
+                    <a href="messages.html">Messages</a>
+                    <span class="footer-sep">|</span>
+                    <a href="support.html">Help & Support</a>
+                    <span class="footer-sep">|</span>
+                    <a href="feedback.html">Give Feedback</a>
+                    <span class="footer-sep">|</span>
+                    <a href="privacy.html">Privacy Policy</a>
+                    <span class="footer-sep">|</span>
+                    <a href="terms.html">Terms</a>
+                </div>
+                <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+                    <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+                    <span class="ft-dot">•</span>
+                    <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+                    <span class="ft-dot">•</span>
+                    <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+                    <span class="ft-dot">•</span>
+                    <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+                </p>
+                <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <script src="js/api.js?v=2.1"></script>
+        <script src="js/feedback.js?v=1.0"></script>
+</body>
+
+</html>

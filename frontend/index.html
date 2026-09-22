@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkillX - Login</title>
     <link rel="stylesheet" href="css/style.css?v=2.0">
+    <!-- Firebase SDK (compat version — works in plain HTML without build tools) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
@@ -285,14 +289,22 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=2.0"></script>
-    <!-- Firebase SDK (compat version — works in plain HTML without build tools) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="js/firebase-config.js?v=2.0"></script>
+    <script src="js/api.js?v=2.1"></script>
     <script>
-        // Redirect if already logged in
-        if (getCurrentStudent()) {
+        // Redirect if already logged in and NOT explicitly logged out
+        if (getCurrentStudent() && localStorage.getItem('skillx_logged_out') !== '1') {
             window.location.href = 'dashboard.html';
+        } else if (localStorage.getItem('skillx_logged_out') === '1') {
+            clearCurrentStudent();
+            // After logout: keep Back / Swipe-Back on this login page so the
+            // previous authenticated Dashboard (or other app pages) cannot be restored.
+            if (window.history && window.history.pushState) {
+                history.pushState({ skillxPostLogout: 1 }, '', location.href);
+                window.addEventListener('popstate', () => {
+                    history.pushState({ skillxPostLogout: 1 }, '', location.href);
+                });
+            }
         }
 
         // If opened as file://, redirect to http://localhost:8080
@@ -350,36 +362,48 @@
         //  Authentication → Settings → Authorised domains → localhost  (add if missing)
         // ================================================================
 
-        // ⬇️ PASTE YOUR FIREBASE CONFIG VALUES HERE
-        const firebaseConfig = {
-            apiKey:            "YOUR_API_KEY",
-            authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId:         "YOUR_PROJECT_ID",
-            storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId:             "YOUR_APP_ID"
-        };
-
-        // Check if config has been filled in
-        const FIREBASE_CONFIGURED = !firebaseConfig.apiKey.includes('YOUR_');
+        // firebaseConfig is already defined in js/firebase-config.js
+        // Check if config has been filled in — looks at apiKey specifically
+        const FIREBASE_CONFIGURED = !firebaseConfig.apiKey.startsWith('YOUR_')
+                                  && firebaseConfig.apiKey.length > 10;
 
         // Initialise Firebase only if configured
         let firebaseApp  = null;
         let firebaseAuth = null;
 
+        console.log('[DEBUG] FIREBASE_CONFIGURED:', FIREBASE_CONFIGURED);
+        console.log('[DEBUG] firebaseConfig:', firebaseConfig);
+        console.log('[DEBUG] typeof firebase:', typeof firebase);
+        console.log('[DEBUG] firebase.auth:', typeof firebase?.auth);
+
         if (FIREBASE_CONFIGURED) {
             try {
                 firebaseApp  = firebase.initializeApp(firebaseConfig);
                 firebaseAuth = firebase.auth();
+                console.log('[DEBUG] Firebase initialized successfully');
+                console.log('[DEBUG] firebaseAuth:', firebaseAuth);
+
+                // Initialise Firebase Analytics
+                if (typeof firebase.analytics !== 'undefined') {
+                    firebase.analytics();
+                }
 
                 // Persist auth state across page reloads
                 firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-                // On every page load, check if user is already signed in via Firebase
-                // If they have a valid Firebase session AND a SkillX session, skip login
+                // On every page load, check if user is already signed in via Firebase.
+                // If they have a valid Firebase session AND no SkillX session, re-establish.
+                // EXCEPTION: if the user explicitly logged out, do NOT auto-restore the previous account.
                 firebaseAuth.onAuthStateChanged(async (fbUser) => {
+                    if (localStorage.getItem('skillx_logged_out') === '1') {
+                        // User explicitly logged out. Purge any leftover Firebase auth state cleanly.
+                        if (fbUser) {
+                            try { await firebaseAuth.signOut(); } catch (_) {}
+                        }
+                        return;
+                    }
                     if (fbUser && !getCurrentStudent()) {
-                        // Firebase says signed in but SkillX session missing — re-establish
+                        // Firebase says signed in but SkillX session missing — re-establish.
                         await exchangeFirebaseTokenForSession(fbUser);
                     }
                 });
@@ -390,11 +414,15 @@
 
         // ── MAIN: called when user clicks "Continue with Google" ──────────
         async function loginWithGoogle() {
+            console.log('[DEBUG] loginWithGoogle() called');
             const alertBox  = document.getElementById('alert-box');
             const googleBtn = document.getElementById('google-btn');
+            console.log('[DEBUG] alertBox:', alertBox);
+            console.log('[DEBUG] googleBtn:', googleBtn);
 
             // ── Guard: config not filled in ──
             if (!FIREBASE_CONFIGURED) {
+                console.log('[DEBUG] FIREBASE_CONFIGURED is false');
                 showAlert(alertBox,
                     '⚙️ Firebase is not configured yet. ' +
                     'Open <b>frontend/index.html</b>, find <b>firebaseConfig</b> ' +
@@ -406,9 +434,11 @@
             }
 
             if (!firebaseAuth) {
+                console.log('[DEBUG] firebaseAuth is null/undefined');
                 showAlert(alertBox, 'Firebase failed to initialise. Check the console for errors.', 'error');
                 return;
             }
+            console.log('[DEBUG] firebaseAuth is valid, proceeding with sign-in');
 
             // ── Loading state ──
             if (googleBtn) {
@@ -424,25 +454,36 @@
             };
 
             try {
+                console.log('[DEBUG] Creating GoogleAuthProvider');
                 // ── Open real Google account chooser popup ──
                 const provider = new firebase.auth.GoogleAuthProvider();
                 provider.addScope('email');
                 provider.addScope('profile');
+                console.log('[DEBUG] Provider created:', provider);
 
+                console.log('[DEBUG] Calling signInWithPopup');
                 const result = await firebaseAuth.signInWithPopup(provider);
+                console.log('[DEBUG] signInWithPopup succeeded, result:', result);
                 const fbUser = result.user;
+                console.log('[DEBUG] Firebase user:', fbUser);
 
+                console.log('[DEBUG] Calling exchangeFirebaseTokenForSession');
                 await exchangeFirebaseTokenForSession(fbUser);
 
             } catch (err) {
+                console.error('[DEBUG] signInWithPopup error:', err);
+                console.error('[DEBUG] Error code:', err.code);
+                console.error('[DEBUG] Error message:', err.message);
                 resetBtn();
 
                 if (err.code === 'auth/popup-closed-by-user' ||
                     err.code === 'auth/cancelled-popup-request') {
+                    console.log('[DEBUG] User closed popup');
                     // Silent — user just closed the popup
                     return;
                 }
                 if (err.code === 'auth/popup-blocked') {
+                    console.log('[DEBUG] Popup was blocked');
                     showAlert(alertBox,
                         '🚫 Popup was blocked by your browser. ' +
                         'Allow pop-ups for localhost:8080 in your browser settings, then try again.',
@@ -450,38 +491,48 @@
                     return;
                 }
                 if (err.code === 'auth/network-request-failed') {
+                    console.log('[DEBUG] Network request failed');
                     showAlert(alertBox, 'Network error. Check your internet connection.', 'error');
                     return;
                 }
+                console.log('[DEBUG] Unknown error, showing alert');
                 showAlert(alertBox, 'Google Sign-In error: ' + (err.message || err.code), 'error');
             }
         }
 
         // ── Send Firebase ID token to Flask backend ───────────────────────
         async function exchangeFirebaseTokenForSession(fbUser) {
+            console.log('[DEBUG] exchangeFirebaseTokenForSession called with fbUser:', fbUser);
             const alertBox  = document.getElementById('alert-box');
             const googleBtn = document.getElementById('google-btn');
 
             try {
+                console.log('[DEBUG] Getting ID token from Firebase');
                 // Get fresh ID token from Firebase (auto-refreshed)
                 const idToken = await fbUser.getIdToken(/* forceRefresh */ true);
+                console.log('[DEBUG] ID token obtained, length:', idToken.length);
 
+                console.log('[DEBUG] Sending token to backend /auth/google');
                 // Send to backend — Flask validates it and creates/finds user
                 const res = await apiFetch('/auth/google', {
                     method: 'POST',
                     body: JSON.stringify({ id_token: idToken })
                 });
+                console.log('[DEBUG] Backend response:', res);
 
                 if (res.ok) {
+                    console.log('[DEBUG] Backend sign-in successful, setting student and redirecting');
                     setCurrentStudent(res.data.student);
                     window.location.href = 'dashboard.html';
                 } else {
+                    console.error('[DEBUG] Backend sign-in failed:', res.data);
                     showAlert(alertBox, res.data.error || 'Sign-in failed on server', 'error');
                     if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = GOOGLE_BTN_HTML; }
                     // Sign out of Firebase to keep state consistent
                     firebaseAuth && firebaseAuth.signOut();
                 }
             } catch (err) {
+                console.error('[DEBUG] exchangeFirebaseTokenForSession error:', err);
                 showAlert(alertBox, 'Failed to complete sign-in: ' + err.message, 'error');
                 if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = GOOGLE_BTN_HTML; }
                 firebaseAuth && firebaseAuth.signOut();
@@ -497,6 +548,108 @@
             );
         }
 
+        // ── Email verification helpers ───────────────────────────────────────
+        function formatFirebaseAuthError(err, fallback) {
+            const code = err && err.code ? String(err.code) : '';
+            const message = err && err.message ? String(err.message) : '';
+            if (code === 'auth/too-many-requests') {
+                return 'Too many verification emails requested. Wait a few minutes, then try again. '
+                    + 'Also check Spam/Promotions for earlier emails from noreply@skillx-4b13d.firebaseapp.com.';
+            }
+            if (code === 'auth/unauthorized-continue-uri' || code === 'auth/invalid-continue-uri') {
+                return 'Verification link URL is not allowed. Add this site domain under '
+                    + 'Firebase Authentication → Settings → Authorized domains. '
+                    + (code ? '[' + code + '] ' : '') + message;
+            }
+            if (code === 'auth/user-token-expired' || code === 'auth/requires-recent-login') {
+                return 'Please log in again, then resend the verification email. '
+                    + (code ? '[' + code + '] ' : '') + message;
+            }
+            if (code === 'auth/network-request-failed') {
+                return 'Network error while contacting Firebase. Check your connection and try again.';
+            }
+            const detail = [code, message].filter(Boolean).join(' — ');
+            return (fallback || 'Firebase error') + (detail ? ': ' + detail : '');
+        }
+
+        function verificationSentMessage(firebaseEmail) {
+            return 'Verification email sent to <b>' + firebaseEmail + '</b>. '
+                + 'Check Inbox, Spam, and Promotions. '
+                + 'Sender: noreply@skillx-4b13d.firebaseapp.com. '
+                + 'Then return here and log in.';
+        }
+
+        async function sendVerificationToUser(user) {
+            // Bare send — default Firebase action URL (authorized). Do not attach
+            // continueUrl to localhost unless needed; bad continue URLs fail the send.
+            await user.sendEmailVerification();
+            return user.email;
+        }
+
+        // ── Resend Verification Email ───────────────────────────────────────
+        async function resendVerificationEmail(email, password) {
+            const alertBox = document.getElementById('alert-box');
+
+            if (!FIREBASE_CONFIGURED || !firebaseAuth) {
+                showAlert(alertBox, 'Firebase is not configured. Please contact support.', 'error');
+                return;
+            }
+
+            try {
+                const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                if (user.emailVerified) {
+                    await firebaseAuth.signOut();
+                    showAlert(alertBox, 'This email is already verified. You can log in.', 'success');
+                    return;
+                }
+
+                const firebaseEmail = user.email || email;
+                if (firebaseEmail.toLowerCase() !== String(email).trim().toLowerCase()) {
+                    console.warn('[verify] Form email differs from Firebase user.email', email, firebaseEmail);
+                }
+
+                try {
+                    await sendVerificationToUser(user);
+                    showAlert(alertBox, verificationSentMessage(firebaseEmail), 'success');
+                    await firebaseAuth.signOut();
+                    return;
+                } catch (sendErr) {
+                    console.error('[verify] sendEmailVerification failed:', sendErr.code, sendErr.message);
+                    // Fall through to server-assisted send / link fallback
+                    await firebaseAuth.signOut();
+                    const serverRes = await apiFetch('/auth/send-verification', {
+                        method: 'POST',
+                        body: JSON.stringify({ email: firebaseEmail, password })
+                    });
+                    if (serverRes.ok && serverRes.data.method === 'firebase_email') {
+                        showAlert(alertBox, verificationSentMessage(serverRes.data.email || firebaseEmail), 'success');
+                        return;
+                    }
+                    if (serverRes.ok && serverRes.data.verification_link) {
+                        showAlert(alertBox,
+                            formatFirebaseAuthError(sendErr, 'Client send failed')
+                            + '<br>Use this Firebase verification link instead: '
+                            + '<a href="' + serverRes.data.verification_link + '" target="_blank" rel="noopener">'
+                            + 'Verify email</a>',
+                            'info');
+                        return;
+                    }
+                    const serverErr = (serverRes.data && (serverRes.data.error || serverRes.data.firebase_error)) || '';
+                    showAlert(alertBox,
+                        formatFirebaseAuthError(sendErr, 'Failed to send verification email')
+                        + (serverErr ? '<br>Server: ' + serverErr : '')
+                        + (serverRes.data && serverRes.data.hint ? '<br>' + serverRes.data.hint : ''),
+                        'error');
+                    return;
+                }
+            } catch (err) {
+                console.error('[verify] resend failed:', err.code, err.message);
+                showAlert(alertBox, formatFirebaseAuthError(err, 'Failed to resend verification email'), 'error');
+            }
+        }
+
         // ── Store the original button HTML for reset ──────────────────────
         const GOOGLE_BTN_HTML = document.getElementById('google-btn')?.innerHTML || '';
 
@@ -510,15 +663,69 @@
             btn.textContent = 'Logging in...';
             btn.disabled = true;
 
-            const res = await Auth.login(email, password);
-            btn.textContent = 'Login →';
-            btn.disabled = false;
+            try {
+                // Check if Firebase is available for email verification check
+                if (FIREBASE_CONFIGURED && firebaseAuth) {
+                    try {
+                        // Sign in with Firebase to check email verification status
+                        const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
+                        const user = userCredential.user;
 
-            if (res.ok) {
-                setCurrentStudent(res.data.student);
-                window.location.href = 'dashboard.html';
-            } else {
-                showAlert(alertBox, res.data.error || 'Login failed', 'error');
+                        if (!user.emailVerified) {
+                            // Block login until Firebase reports emailVerified === true
+                            const firebaseEmail = user.email || email;
+                            await firebaseAuth.signOut();
+                            window.__pendingVerify = { email: firebaseEmail, password: password };
+                            showAlert(alertBox,
+                                'Login blocked: <b>' + firebaseEmail + '</b> is not verified yet. '
+                                + 'Check Inbox/Spam/Promotions for the SkillX verification email '
+                                + '(from noreply@skillx-4b13d.firebaseapp.com). '
+                                + '<button type="button" id="resend-verify-btn" '
+                                + 'style="margin-top:10px;padding:5px 10px;background:#1a73e8;color:white;border:none;border-radius:4px;cursor:pointer;">'
+                                + 'Resend Verification Email</button>',
+                                'error');
+                            const resendBtn = document.getElementById('resend-verify-btn');
+                            if (resendBtn) {
+                                resendBtn.addEventListener('click', () => {
+                                    const pending = window.__pendingVerify || {};
+                                    resendVerificationEmail(pending.email || email, pending.password || password);
+                                });
+                            }
+                            btn.textContent = 'Login →';
+                            btn.disabled = false;
+                            return;
+                        }
+
+                        // Email is verified, update database if needed
+                        await apiFetch('/verify-email', {
+                            method: 'POST',
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        // Sign out from Firebase (we use backend session)
+                        await firebaseAuth.signOut();
+                    } catch (firebaseErr) {
+                        // Firebase sign-in failed (user might not exist in Firebase, e.g., old account)
+                        // Fall through to backend login
+                        console.log('Firebase sign-in failed, trying backend login:', firebaseErr.message);
+                    }
+                }
+
+                // Proceed with backend login
+                const res = await Auth.login(email, password);
+                btn.textContent = 'Login →';
+                btn.disabled = false;
+
+                if (res.ok) {
+                    setCurrentStudent(res.data.student);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    showAlert(alertBox, res.data.error || 'Login failed', 'error');
+                }
+            } catch (err) {
+                btn.textContent = 'Login →';
+                btn.disabled = false;
+                showAlert(alertBox, 'Login failed: ' + (err.message || err), 'error');
             }
         });
 
@@ -537,16 +744,102 @@
             btn.textContent = 'Creating...';
             btn.disabled = true;
 
-            const res = await Auth.register(payload);
-            btn.textContent = 'Create Account →';
-            btn.disabled = false;
+            try {
+                // Check if Firebase is available
+                if (!FIREBASE_CONFIGURED || !firebaseAuth) {
+                    showAlert(alertBox, 'Firebase is not configured. Please contact support.', 'error');
+                    btn.textContent = 'Create Account →';
+                    btn.disabled = false;
+                    return;
+                }
 
-            if (res.ok) {
-                showAlert(alertBox, 'Account created! Please login.', 'success');
-                switchTab('login');
-                document.getElementById('login-email').value = payload.email;
-            } else {
-                showAlert(alertBox, res.data.error || 'Registration failed', 'error');
+                // Create Firebase user
+                const userCredential = await firebaseAuth.createUserWithEmailAndPassword(payload.email, payload.password);
+                const user = userCredential.user;
+                const firebaseEmail = user.email || payload.email;
+
+                if (firebaseEmail.toLowerCase() !== String(payload.email).trim().toLowerCase()) {
+                    console.warn('[verify] Registered email differs from Firebase user.email', payload.email, firebaseEmail);
+                }
+
+                // Send email verification — catch failures separately so we never
+                // claim "sent" when Firebase rejected the request.
+                try {
+                    await sendVerificationToUser(user);
+                    console.log('[verify] sendEmailVerification succeeded for', firebaseEmail);
+                } catch (sendErr) {
+                    console.error('[verify] sendEmailVerification failed:', sendErr.code, sendErr.message);
+                    try { await user.delete(); } catch (_) {}
+                    btn.textContent = 'Create Account →';
+                    btn.disabled = false;
+                    showAlert(alertBox, formatFirebaseAuthError(sendErr, 'Could not send verification email'), 'error');
+                    return;
+                }
+
+                // Call backend to create student record
+                const res = await Auth.register(payload);
+                btn.textContent = 'Create Account →';
+                btn.disabled = false;
+
+                if (res.ok) {
+                    window.__pendingVerify = { email: firebaseEmail, password: payload.password };
+                    showAlert(alertBox,
+                        'Account created! Verification email sent to <b>' + firebaseEmail + '</b>. '
+                        + 'Check Inbox/Spam/Promotions. '
+                        + '<br><button type="button" id="open-verify-link-btn" '
+                        + 'style="margin-top:8px;padding:4px 8px;background:#1a73e8;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.85rem;">'
+                        + "Didn't get it? Open link</button>",
+                        'success');
+                    const openBtn = document.getElementById('open-verify-link-btn');
+                    if (openBtn) {
+                        openBtn.addEventListener('click', async () => {
+                            const pending = window.__pendingVerify || {};
+                            const serverRes = await apiFetch('/auth/send-verification', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    email: pending.email || firebaseEmail,
+                                    password: pending.password || payload.password
+                                })
+                            });
+                            if (serverRes.ok && serverRes.data.verification_link) {
+                                window.open(serverRes.data.verification_link, '_blank', 'noopener');
+                                showAlert(alertBox,
+                                    'Opened Firebase verification link for <b>'
+                                    + (serverRes.data.email || firebaseEmail)
+                                    + '</b>. After it succeeds, log in here.',
+                                    'success');
+                            } else if (serverRes.ok && serverRes.data.method === 'firebase_email') {
+                                showAlert(alertBox, verificationSentMessage(serverRes.data.email || firebaseEmail), 'success');
+                            } else {
+                                showAlert(alertBox,
+                                    (serverRes.data && (serverRes.data.error || serverRes.data.firebase_error))
+                                    || 'Could not get a verification link. Wait a few minutes and try Resend on the login screen.',
+                                    'error');
+                            }
+                        });
+                    }
+                    switchTab('login');
+                    document.getElementById('login-email').value = firebaseEmail;
+                    await firebaseAuth.signOut();
+                } else {
+                    await user.delete();
+                    showAlert(alertBox, res.data.error || 'Registration failed', 'error');
+                }
+            } catch (err) {
+                btn.textContent = 'Create Account →';
+                btn.disabled = false;
+
+                if (err.code === 'auth/email-already-in-use') {
+                    showAlert(alertBox, 'Email already registered. Please login.', 'error');
+                } else if (err.code === 'auth/weak-password') {
+                    showAlert(alertBox, 'Password is too weak. Please use a stronger password.', 'error');
+                } else if (err.code === 'auth/invalid-email') {
+                    showAlert(alertBox, 'Invalid email address.', 'error');
+                } else if (err.code === 'auth/too-many-requests') {
+                    showAlert(alertBox, formatFirebaseAuthError(err, 'Registration rate-limited'), 'error');
+                } else {
+                    showAlert(alertBox, formatFirebaseAuthError(err, 'Registration failed'), 'error');
+                }
             }
         });
     </script>

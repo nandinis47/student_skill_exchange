@@ -92,23 +92,9 @@ CREATE TABLE IF NOT EXISTS message_reactions (
 )""")
 conn.commit(); print('+ Table: message_reactions')
 
-# ── 7. Seed sample group ──────────────────────────────────────
-try:
-    cur.execute("INSERT INTO chat_groups (group_name, description, created_by) VALUES (%s,%s,%s)",
-                ('CS Study Group', 'Discuss DSA, Python and Web Dev', 1))
-    conn.commit()
-    gid = cur.lastrowid
-    for sid, role in [(1,'admin'),(2,'member'),(3,'member'),(4,'member')]:
-        try:
-            cur.execute("INSERT INTO group_members (group_id, student_id, role) VALUES (%s,%s,%s)",(gid,sid,role))
-            conn.commit()
-        except: pass
-    cur.execute("INSERT INTO group_messages (group_id, sender_id, message) VALUES (%s,%s,%s)",
-                (gid, 1, 'Welcome to the CS Study Group! 👋'))
-    conn.commit()
-    print('+ Sample group seeded')
-except Exception as e:
-    print(f'~ group seed: {e}')
+# NOTE: Sample group seeding (CS Study Group with fake users 1-4)
+# has been intentionally removed. Groups are created by real users
+# through the app interface.
 
 cur.close(); conn.close()
 print('\nMigration 4 complete!')

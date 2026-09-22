@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile - SkillX</title>
-<link rel="stylesheet" href="css/style.css?v=2.0">
+<link rel="stylesheet" href="css/style.css?v=2.3">
 <style>
 /* ── profile-specific ── */
 .profile-layout { display: grid; grid-template-columns: 310px 1fr; gap: 24px; }
@@ -16,7 +16,7 @@
     box-shadow: var(--shadow);
 }
 .profile-card-banner {
-    height: 80px;
+    height: 70px;
     background: linear-gradient(135deg,#1a73e8,#0d47a1);
 }
 .profile-card-body { padding: 0 24px 24px; text-align: center; }
@@ -138,9 +138,20 @@
         <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
     </ul>
     <div class="navbar-user">
-        <div class="user-avatar" id="nav-avatar">?</div>
-        <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
-        <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
     </div>
 </nav>
 
@@ -197,6 +208,16 @@
                             <div class="xp-mini-fill" id="p-xp-fill" style="width:0%"></div>
                         </div>
                         <div class="xp-mini-label" id="p-xp-label">0 XP</div>
+                    </div>
+
+                    <!-- Time Credits balance -->
+                    <div style="display:flex;align-items:center;justify-content:center;
+                                gap:8px;background:#f3e8fd;border-radius:var(--radius-sm);
+                                padding:8px 14px;margin-bottom:4px;">
+                        <span style="font-size:1.1rem;">⏰</span>
+                        <span style="font-size:0.85rem;font-weight:700;color:#7b1fa2;"
+                              id="p-credits">0</span>
+                        <span style="font-size:0.78rem;color:#7b1fa2;font-weight:500;">Time Credits</span>
                     </div>
 
                     <button class="btn btn-outline" style="width:100%;justify-content:center;"
@@ -305,6 +326,42 @@
     </div>
 </div>
 
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
 <!-- Avatar picker modal -->
 <div class="modal-overlay" id="avatar-modal">
   <div class="modal" style="max-width:400px;">
@@ -315,7 +372,7 @@
   </div>
 </div>
 
-<script src="js/api.js?v=2.0"></script>
+<script src="js/api.js?v=2.1"></script>
 <script>
 requireAuth(); renderNavUser(); setActiveNav('profile');
 const student = getCurrentStudent();
@@ -435,6 +492,9 @@ async function loadProfile() {
     const xpPct = Math.min(100, Math.round(((s.xp_points||0)/200)*100));
     document.getElementById('p-xp-fill').style.width = xpPct + '%';
     document.getElementById('p-xp-label').textContent = `⭐ ${s.xp_points||0} XP  •  🔥 ${s.learning_streak||0} day streak`;
+
+    // Time Credits balance
+    document.getElementById('p-credits').textContent = s.time_credits ?? 0;
 
     // Pre-fill edit form
     document.getElementById('edit-name').value = s.name;

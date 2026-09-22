@@ -1,0 +1,421 @@
+/* ============================================
+   Help & Support Page Styles - SkillX
+   ============================================ */
+
+.support-container {
+    max-width: 1050px;
+    margin: 30px auto;
+    padding: 0 20px 60px 20px;
+}
+
+.support-hero {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 36px 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+}
+
+.support-hero h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.support-hero p {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.search-box {
+    max-width: 540px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 18px 12px 42px;
+    border-radius: 30px;
+    border: none;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    outline: none;
+    color: var(--text-dark);
+}
+
+.search-box .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    color: #888;
+}
+
+/* Category Jump Cards */
+.support-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 36px;
+}
+
+.category-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+}
+
+.category-card:hover,
+.category-card.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-2px);
+}
+
+.category-card .cat-icon {
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+}
+
+.category-card h3 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* FAQ Accordion Section */
+.faq-section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.faq-group {
+    margin-bottom: 28px;
+}
+
+.faq-group-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--primary-light);
+}
+
+.accordion-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.accordion-header {
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.accordion-header:hover {
+    background: var(--bg);
+}
+
+.accordion-chevron {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.accordion-item.active .accordion-chevron {
+    transform: rotate(180deg);
+}
+
+.accordion-body {
+    display: none;
+    padding: 0 18px 16px 18px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    border-top: 1px solid transparent;
+}
+
+.accordion-item.active .accordion-body {
+    display: block;
+    border-top-color: var(--border);
+}
+
+/* Still Need Help Card */
+.support-form-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-top: 40px;
+}
+
+.support-form-card h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.support-form-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+/* Ticket History Table / List */
+.tickets-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-top: 30px;
+}
+
+.ticket-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ticket-row:hover {
+    background: var(--primary-light);
+}
+
+.ticket-row:last-child {
+    border-bottom: none;
+}
+
+.ticket-info h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.ticket-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ticket-date {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.ticket-click-hint {
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+}
+
+.status-badge.open,
+.status-badge.Open {
+    background: #fce8e6;
+    color: #c5221f;
+}
+
+.status-badge.in-progress,
+.status-badge.In-Progress {
+    background: #fef7e0;
+    color: #b06000;
+}
+
+.status-badge.resolved,
+.status-badge.Resolved {
+    background: #e6f4ea;
+    color: #137333;
+}
+
+/* Modal Ticket Details */
+.ticket-detail-field {
+    margin-bottom: 16px;
+}
+
+.ticket-detail-field label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.ticket-detail-value {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.ticket-desc-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.admin-reply-box {
+    background: #eef6ff;
+    border: 1px solid #c2e0ff;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    color: #0c4a6e;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.dark-mode .ticket-row:hover {
+    background: #252840;
+}
+
+.dark-mode .ticket-desc-box {
+    background: #151522;
+    border-color: #2d2d44;
+    color: #e8e8ff;
+}
+
+.dark-mode .admin-reply-box {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+
+.status-badge.resolved {
+    background: #e6f4ea;
+    color: #137333;
+}
+
+/* Dark Mode Overrides */
+.dark-mode .support-hero {
+    background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+    border: 1px solid #3a3a5c;
+}
+
+.dark-mode .search-box input {
+    background: #1e1e2e;
+    color: #e8e8ff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+.dark-mode .category-card,
+.dark-mode .accordion-item,
+.dark-mode .support-form-card,
+.dark-mode .tickets-card {
+    background: #1e1e2e;
+    border-color: #2d2d44;
+}
+
+.dark-mode .category-card:hover,
+.dark-mode .category-card.active {
+    background: #252840;
+    border-color: #64b5f6;
+}
+
+.dark-mode .accordion-header {
+    color: #e8e8ff;
+}
+
+.dark-mode .accordion-header:hover {
+    background: #252840;
+}
+
+.dark-mode .accordion-body {
+    color: #9999bb;
+}
+
+.dark-mode .ticket-row {
+    border-color: #2d2d44;
+}
+
+/* Modal Overlay Rules */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2500;
+}
+
+.modal-overlay.show,
+.modal-overlay.active {
+    display: flex !important;
+}
+
+.modal-box {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 90%;
+    max-width: 520px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.dark-mode .modal-box {
+    background: #1e1e2e;
+    border: 1px solid #2d2d44;
+    color: #e8e8ff;
+}

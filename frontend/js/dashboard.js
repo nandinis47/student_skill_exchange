@@ -71,12 +71,27 @@ function renderTodaysFocus(s) {
     document.getElementById('focus-meta').textContent = isToday
         ? '✅ You\'ve been active today! Keep it up.'
         : '⏰ You haven\'t logged activity today yet. Complete your goal!';
+
+    // Disable the "Done for Today" button if XP already claimed today
+    const doneBtn = document.getElementById('focus-done-btn');
+    if (doneBtn) {
+        if (isToday) {
+            doneBtn.disabled    = true;
+            doneBtn.textContent = '✅ Done for Today';
+            doneBtn.title       = 'XP already earned today';
+        } else {
+            doneBtn.disabled    = false;
+            doneBtn.textContent = '✅ Done for Today';
+            doneBtn.title       = '';
+        }
+    }
 }
 
 // ── Analytics Stat Cards ─────────────────────────────────────
 function renderStatCards(a) {
     document.getElementById('stat-exchanges').textContent = a.exchanges_done;
     document.getElementById('stat-hours').textContent = a.total_hours.toFixed(1) + 'h';
+    document.getElementById('stat-credits').textContent = a.time_credits ?? '-';
 }
 
 // ── Skill Journey ────────────────────────────────────────────
@@ -143,7 +158,7 @@ function renderSmartMatches(matches) {
                 <div class="match-info">
                     <h4>👤 ${m.name}</h4>
                     <p>🎓 Can teach: ${m.skill_name} · ${m.department}</p>
-                    <p>🎯 Wants to learn what you know</p>
+                    <p>🎯 Teaches a skill you want to learn${m.is_mutual ? ' · 🔄 Mutual interest' : ''}</p>
                 </div>
             </div>
             <div class="match-pct">${m.match_percent}% match</div>
@@ -385,18 +400,59 @@ function renderRecentRequests(data) {
 
 // ── Mark Focus Done (add XP) ──────────────────────────────────
 async function markFocusDone() {
+    const doneBtn = document.getElementById('focus-done-btn');
+
+    // Guard: button should already be disabled if done today, but
+    // double-check in case the user somehow bypasses the UI state.
+    if (doneBtn && doneBtn.disabled) return;
+
     const res = await Gamification.addXP(student.id, 10, 'milestone', 'Completed daily goal');
-    if (res.ok) {
-        document.getElementById('xp-label').textContent = res.data.xp_points + ' XP';
+    if (!res.ok) return;
+
+    document.getElementById('xp-label').textContent = res.data.xp_points + ' XP';
+
+    if (res.data.already_done) {
+        // Server confirmed it was already done today — update UI without rewarding
+        document.getElementById('focus-meta').textContent = '✅ You\'ve been active today! Keep it up.';
+    } else {
         document.getElementById('focus-meta').textContent = '🎉 Great job! +10 XP earned today!';
+    }
+
+    // Disable button regardless — either already done or just done
+    if (doneBtn) {
+        doneBtn.disabled    = true;
+        doneBtn.textContent = '✅ Done for Today';
+        doneBtn.title       = 'XP already earned today';
     }
 }
 
-// ── Session Join ─────────────────────────────────────────────
+// ── Session Join / Confirm ────────────────────────────────────
 async function joinSession(id) {
-    await Sessions.update(id, 'completed');
-    await Gamification.addXP(student.id, 20, 'exchange_completed', 'Completed a learning session');
-    alert('Session marked complete! +20 XP earned 🎉');
+    // Call the confirm endpoint — this marks the current user's side as done.
+    // Credits are released to the teacher only when BOTH sides confirm.
+    const res = await Sessions.confirm(id, student.id);
+
+    if (!res.ok) {
+        alert('Could not confirm session: ' + (res.data?.error || 'Unknown error'));
+        return;
+    }
+
+    const { both_confirmed, learner_confirmed, teacher_confirmed, credits_released } = res.data;
+
+    if (both_confirmed) {
+        // XP already awarded server-side; refresh dashboard
+        let msg = '🎉 Session complete! Both sides confirmed.';
+        if (credits_released > 0) {
+            msg += ` ${credits_released} Time Credit(s) released to teacher.`;
+        }
+        await Gamification.addXP(student.id, 20, 'exchange_completed', 'Completed a learning session');
+        alert(msg);
+    } else {
+        // Only one side confirmed so far
+        const waiting = learner_confirmed ? 'teacher' : 'learner';
+        alert(`✅ Your confirmation recorded! Waiting for the ${waiting} to confirm before credits are released.`);
+    }
+
     initDashboard();
 }
 

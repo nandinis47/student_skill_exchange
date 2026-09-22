@@ -56,7 +56,9 @@ def run_sql_file(filepath, label):
     print(f"  ✓ {ok} statements executed")
 
 run_sql_file(os.path.join(base, 'database', 'schema.sql'), 'schema.sql')
-run_sql_file(os.path.join(base, 'database', 'sample_data.sql'), 'sample_data.sql')
+# sample_data.sql only inserts skills catalogue (INSERT IGNORE — safe to re-run).
+# Student/user seed data was removed from that file intentionally.
+run_sql_file(os.path.join(base, 'database', 'sample_data.sql'), 'sample_data.sql (skills catalogue only)')
 
 # Verify counts
 cursor.execute("USE student_skill_exchange")

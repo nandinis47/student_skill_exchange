@@ -73,41 +73,9 @@ CREATE TABLE IF NOT EXISTS typing_status (
 conn.commit()
 print("+ Table: typing_status")
 
-# ── 6. Seed sample shared content ────────────────────────────
-import datetime
-samples = [
-    (1, 2, 'Python Basics Cheatsheet',   'document', 'pdf',          None, 'python_cheatsheet.pdf', '245 KB',  'Complete Python syntax reference'),
-    (2, 1, 'React Crash Course',          'media',    'video',        'https://www.youtube.com/watch?v=w7ejDZ8SWv8', None, None, 'Great beginner React tutorial'),
-    (4, 1, 'ML for Beginners - Google',   'link',     'course',       'https://developers.google.com/machine-learning/crash-course', None, None, 'Free ML course by Google'),
-    (1, 3, 'DSA Notes PDF',               'document', 'notes',        None, 'dsa_notes.pdf', '1.2 MB',  'My personal DSA revision notes'),
-    (2, 3, 'Web Dev Roadmap',             'link',     'website',      'https://roadmap.sh/frontend', None, None, 'Complete frontend roadmap'),
-    (7, 1, 'Node.js Crash Course Video',  'media',    'video',        'https://www.youtube.com/watch?v=fBNz5xF-Kx4', None, None, 'Node.js full tutorial'),
-    (4, 6, 'ML Slides - Week 1',          'document', 'presentation', None, 'ml_week1.pptx', '3.4 MB', 'My lecture slides'),
-    (8, 6, 'Cloud Computing Intro',       'link',     'youtube',      'https://www.youtube.com/watch?v=M988_fsOSWo', None, None, 'AWS basics explained'),
-]
-for s in samples:
-    try:
-        cur.execute("""
-            INSERT INTO shared_content
-              (sender_id,receiver_id,title,content_type,media_type,file_url,file_name,file_size,description)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, s)
-        conn.commit()
-    except Exception as e:
-        print(f"  skip: {e}")
-print("+ Shared content seeded")
-
-# ── 7. Sample bios ────────────────────────────────────────────
-bios = [
-    (1, "Hi! I'm Aarav, a 2nd year CS student passionate about Python and DSA. I love problem-solving and competitive programming. Looking to learn Web Dev and ML from peers!"),
-    (2, "Hey, I'm Priya! Web developer in training 🌐 I teach React and HTML/CSS. Always up for a skill exchange. Let's build something cool together!"),
-    (3, "Rohan here — Electronics student who loves coding on the side. Learning Python and SQL. Feel free to reach out for an exchange!"),
-    (4, "Sneha — 4th year CS, specializing in ML and Data Science. Happy to teach what I know and always eager to keep learning!"),
-]
-for sid, bio in bios:
-    cur.execute("UPDATE students SET bio=%s WHERE id=%s", (bio, sid))
-conn.commit()
-print("+ Bios seeded")
+# NOTE: Shared content seeding and bio seeding for fake users (IDs 1-8)
+# have been intentionally removed. Genuine users manage their own content
+# and bios through the app.
 
 cur.close()
 conn.close()

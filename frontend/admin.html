@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <style>
+        .admin-nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 4px;
+        }
+
+        .admin-tab {
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-tab:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .admin-tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+            background: var(--primary-light);
+        }
+
+        .admin-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .stat-icon.users { background: #e8f0fe; color: #1a73e8; }
+        .stat-icon.open-tickets { background: #fce8e6; color: #d93025; }
+        .stat-icon.progress-tickets { background: #fef7e0; color: #f2994a; }
+        .stat-icon.unresolved-fb { background: #feefe3; color: #e67e22; }
+        .stat-icon.total-fb { background: #e6f4ea; color: #137333; }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+
+        .stat-title {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-subtext {
+            font-size: 0.775rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .admin-section {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .admin-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-section-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+            background: var(--bg);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .filter-controls .search-input {
+            flex: 2;
+            min-width: 220px;
+        }
+
+        .filter-controls .select-input {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .admin-table-container {
+            overflow-x: auto;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 10px 14px;
+            background: var(--bg);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
+            vertical-align: middle;
+        }
+
+        .admin-table tr:hover td {
+            background: var(--primary-light);
+        }
+
+        .admin-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-select {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+            background: var(--white);
+            color: var(--text-dark);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.Open { background: #fce8e6; color: #c5221f; }
+        .status-badge.In-Progress { background: #fef7e0; color: #b06000; }
+        .status-badge.Resolved { background: #e6f4ea; color: #137333; }
+
+        .star-rating {
+            color: #fbbc04;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .access-denied-box {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            margin: 60px auto;
+            box-shadow: var(--shadow);
+        }
+
+        .access-denied-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        /* Modal Styles */
+        .ticket-modal-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            max-width: 650px;
+            width: 90%;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .ticket-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 16px;
+            background: var(--bg);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .ticket-detail-label {
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .ticket-detail-val {
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        html.dark-mode .stat-card,
+        html.dark-mode .admin-section,
+        html.dark-mode .access-denied-box,
+        html.dark-mode .ticket-modal-card {
+            background: #1e1e2e;
+            border-color: #2d2d44;
+        }
+
+        html.dark-mode .stat-value,
+        html.dark-mode .admin-section-header h2,
+        html.dark-mode .admin-table td,
+        html.dark-mode .ticket-detail-val {
+            color: #e8e8ff;
+        }
+
+        html.dark-mode .admin-table th,
+        html.dark-mode .filter-controls,
+        html.dark-mode .ticket-detail-grid {
+            background: #151522;
+            color: #9999bb;
+            border-color: #2d2d44;
+        }
+
+        html.dark-mode .admin-table td {
+            border-color: #2d2d44;
+        }
+
+        html.dark-mode .admin-table tr:hover td {
+            background: #252840;
+        }
+
+        html.dark-mode .status-select {
+            background: #28283d;
+            border-color: #3d3d5c;
+            color: #e8e8ff;
+        }
+
+        @media (max-width: 1024px) {
+            .admin-overview-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .admin-overview-grid {
+                grid-template-columns: 1fr;
+            }
+            .ticket-detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> SkillX
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container" id="admin-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>🛡️ Admin Dashboard</h1>
+        <p>Real-time platform metrics, support tickets, and community feedback management.</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- Access Denied view (hidden by default) -->
+    <div id="access-denied-view" style="display:none;" class="access-denied-box">
+        <div class="access-denied-icon">🚫</div>
+        <h2 style="font-size:1.3rem; margin-bottom:8px; color:var(--danger);">Access Denied</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+            You do not have administrator privileges to view this page.
+        </p>
+        <a href="dashboard.html" class="btn btn-primary" style="justify-content:center;">Return to Dashboard</a>
+    </div>
+
+    <!-- Admin Content View -->
+    <div id="admin-main-view" style="display:none;">
+
+        <!-- Admin Tab Navigation -->
+        <div class="admin-nav-tabs">
+            <button class="admin-tab active" id="tab-btn-overview" onclick="switchAdminTab('overview')">
+                📊 Overview
+            </button>
+            <button class="admin-tab" id="tab-btn-tickets" onclick="switchAdminTab('tickets')">
+                🎫 Support Tickets
+            </button>
+            <button class="admin-tab" id="tab-btn-feedback" onclick="switchAdminTab('feedback')">
+                💬 User Feedback
+            </button>
+        </div>
+
+        <!-- ── TAB 1: OVERVIEW ── -->
+        <div id="admin-tab-overview">
+            <!-- Summary Cards -->
+            <div class="admin-overview-grid">
+                <div class="stat-card" onclick="switchAdminTab('overview')">
+                    <div class="stat-card-header">
+                        <span class="stat-title">Total Users</span>
+                        <div class="stat-icon users">👥</div>
+                    </div>
+                    <div class="stat-value" id="card-total-users">-</div>
+                    <div class="stat-subtext">Registered Students</div>
+                </div>
+
+                <div class="stat-card" onclick="switchAdminTab('tickets','Open')">
+                    <div class="stat-card-header">
+                        <span class="stat-title">Open Support</span>
+                        <div class="stat-icon open-tickets">📩</div>
+                    </div>
+                    <div class="stat-value" id="card-open-support">-</div>
+                    <div class="stat-subtext">Requires Attention</div>
+                </div>
+
+                <div class="stat-card" onclick="switchAdminTab('tickets','In Progress')">
+                    <div class="stat-card-header">
+                        <span class="stat-title">In Progress Support</span>
+                        <div class="stat-icon progress-tickets">⏳</div>
+                    </div>
+                    <div class="stat-value" id="card-progress-support">-</div>
+                    <div class="stat-subtext">Currently Handled</div>
+                </div>
+
+                <div class="stat-card" onclick="switchAdminTab('feedback')">
+                    <div class="stat-card-header">
+                        <span class="stat-title">Unresolved Feedback</span>
+                        <div class="stat-icon unresolved-fb">💬</div>
+                    </div>
+                    <div class="stat-value" id="card-unresolved-feedback">-</div>
+                    <div class="stat-subtext">Pending Review</div>
+                </div>
+
+                <div class="stat-card" onclick="switchAdminTab('feedback')">
+                    <div class="stat-card-header">
+                        <span class="stat-title">Total Feedback</span>
+                        <div class="stat-icon total-fb">📋</div>
+                    </div>
+                    <div class="stat-value" id="card-total-feedback">-</div>
+                    <div class="stat-subtext">Community Submissions</div>
+                </div>
+            </div>
+
+            <!-- Recent Overview Support Tickets -->
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2>🎫 Recent Support Requests</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="switchAdminTab('tickets')">View All Tickets →</button>
+                </div>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overview-tickets-table-body">
+                            <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Overview User Feedback -->
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2>💬 Recent User Feedback</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="switchAdminTab('feedback')">View All Feedback →</button>
+                </div>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student</th>
+                                <th>Rating</th>
+                                <th>Category</th>
+                                <th>Message</th>
+                                <th>Allow Contact</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overview-feedback-table-body">
+                            <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 2: SUPPORT TICKETS SECTION ── -->
+        <div id="admin-tab-tickets" style="display:none;">
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2>🎫 Support Tickets Management</h2>
+                    <span style="font-size:0.85rem; color:var(--text-muted);" id="tickets-count-label"></span>
+                </div>
+
+                <!-- Filters & Search Bar -->
+                <div class="filter-controls">
+                    <input type="text" id="ticket-search-input" class="form-control search-input"
+                           placeholder="🔍 Search tickets by ID, user name, email, category, or keyword..."
+                           onkeyup="if(event.key==='Enter') filterAdminTickets()">
+
+                    <select id="ticket-status-filter" class="form-control select-input" onchange="filterAdminTickets()">
+                        <option value="all">All Statuses</option>
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+
+                    <select id="ticket-category-filter" class="form-control select-input" onchange="filterAdminTickets()">
+                        <option value="all">All Categories</option>
+                        <option value="Getting Started">🚀 Getting Started</option>
+                        <option value="Skills & Matching">⚡ Skills & Matching</option>
+                        <option value="Exchange Requests">🔄 Exchange Requests</option>
+                        <option value="Time Credits & Sessions">⏱️ Time Credits & Sessions</option>
+                        <option value="Account & Profile">👤 Account & Profile</option>
+                        <option value="Common Problems">⚠️ Common Problems</option>
+                        <option value="Other">💬 Other</option>
+                    </select>
+
+                    <button class="btn btn-primary btn-sm" onclick="filterAdminTickets()">Filter</button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetTicketFilters()">Reset</button>
+                </div>
+
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket ID</th>
+                                <th>Student User</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Date Submitted</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-tickets-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">
+                                    <div class="spinner"></div> Loading support tickets...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 3: USER FEEDBACK SECTION ── -->
+        <div id="admin-tab-feedback" style="display:none;">
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <h2>💬 User Feedback Management</h2>
+                    <span style="font-size:0.85rem; color:var(--text-muted);" id="all-feedback-count-label"></span>
+                </div>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student User</th>
+                                <th>Rating</th>
+                                <th>Category</th>
+                                <th>Message</th>
+                                <th>Allow Contact</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-feedback-table-body">
+                            <tr>
+                                <td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);">
+                                    <div class="spinner"></div> Loading feedback...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── ADMIN SUPPORT TICKET DETAILS MODAL ── -->
+<div class="modal-overlay" id="admin-ticket-modal">
+    <div class="ticket-modal-card">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <h3 style="margin:0; font-size:1.2rem; color:var(--text-dark);" id="modal-admin-ticket-id">Ticket Details</h3>
+            <button class="modal-close" onclick="closeAdminTicketModal()">✕</button>
+        </div>
+
+        <div id="modal-ticket-alert"></div>
+
+        <div class="ticket-detail-grid">
+            <div>
+                <div class="ticket-detail-label">Student Name</div>
+                <div class="ticket-detail-val" id="modal-ticket-user-name">-</div>
+            </div>
+            <div>
+                <div class="ticket-detail-label">Student Email</div>
+                <div class="ticket-detail-val" id="modal-ticket-user-email">-</div>
+            </div>
+            <div>
+                <div class="ticket-detail-label">Category</div>
+                <div class="ticket-detail-val" id="modal-ticket-category">-</div>
+            </div>
+            <div>
+                <div class="ticket-detail-label">Submitted Date</div>
+                <div class="ticket-detail-val" id="modal-ticket-date">-</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <div class="ticket-detail-label" style="margin-bottom:6px;">Problem Description</div>
+            <div id="modal-ticket-desc" style="background:var(--bg); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border); font-size:0.9rem; color:var(--text-dark); white-space:pre-wrap; line-height:1.5;">-</div>
+        </div>
+
+        <div class="form-group">
+            <label style="font-weight:600; font-size:0.875rem;">Current Ticket Status</label>
+            <select id="modal-ticket-status-select" class="form-control" style="font-weight:600;">
+                <option value="Open">Open (Requires Action)</option>
+                <option value="In Progress">In Progress (Handling)</option>
+                <option value="Resolved">Resolved (Completed)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label style="font-weight:600; font-size:0.875rem;">Official Support Response / Admin Reply</label>
+            <textarea id="modal-ticket-admin-reply" class="form-control" rows="4"
+                      placeholder="Write an official response or resolution notes for the student..."></textarea>
+            <div style="font-size:0.775rem; color:var(--text-muted); margin-top:4px;">
+                This reply will be visible to the student under their <strong>Help & Support -> My Support Tickets</strong> view.
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="closeAdminTicketModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveAdminTicketModal()">Save Ticket Updates</button>
+        </div>
+    </div>
+</div>
+
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
+<script>
+    requireAuth();
+    renderNavUser();
+
+    const currentStudent = getCurrentStudent();
+    let currentAdminOverview = null;
+    let allAdminTickets = [];
+    let adminTicketsMap = {};
+    let activeModalTicketId = null;
+
+    async function loadAdminOverview() {
+        const alertBox = document.getElementById('alert-box');
+        const deniedView = document.getElementById('access-denied-view');
+        const mainView = document.getElementById('admin-main-view');
+
+        const res = await Admin.getOverview();
+
+        if (!res.ok) {
+            deniedView.style.display = 'block';
+            mainView.style.display = 'none';
+            if (res.status === 403) {
+                showAlert(alertBox, 'Access Denied: Administrator permissions required.', 'error');
+            } else {
+                showAlert(alertBox, res.data.error || 'Failed to load admin overview', 'error');
+            }
+            return;
+        }
+
+        deniedView.style.display = 'none';
+        mainView.style.display = 'block';
+
+        currentAdminOverview = res.data;
+
+        // Populate Summary Cards
+        document.getElementById('card-total-users').textContent = currentAdminOverview.total_users;
+        document.getElementById('card-open-support').textContent = currentAdminOverview.open_support_tickets;
+        document.getElementById('card-progress-support').textContent = currentAdminOverview.in_progress_support_tickets;
+        document.getElementById('card-unresolved-feedback').textContent = currentAdminOverview.unresolved_feedback;
+        document.getElementById('card-total-feedback').textContent = currentAdminOverview.total_feedback;
+
+        // Render Overview Tables
+        renderOverviewTicketsTable(currentAdminOverview.recent_tickets || []);
+        renderOverviewFeedbackTable(currentAdminOverview.recent_feedback || []);
+
+        // Also load full support tickets list
+        await loadAllAdminTickets();
+    }
+
+    function switchAdminTab(tabName, statusFilter) {
+        document.querySelectorAll('.admin-tab').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('admin-tab-overview').style.display = 'none';
+        document.getElementById('admin-tab-tickets').style.display = 'none';
+        document.getElementById('admin-tab-feedback').style.display = 'none';
+
+        if (tabName === 'tickets') {
+            document.getElementById('tab-btn-tickets').classList.add('active');
+            document.getElementById('admin-tab-tickets').style.display = 'block';
+            if (statusFilter) {
+                document.getElementById('ticket-status-filter').value = statusFilter;
+                filterAdminTickets();
+            }
+        } else if (tabName === 'feedback') {
+            document.getElementById('tab-btn-feedback').classList.add('active');
+            document.getElementById('admin-tab-feedback').style.display = 'block';
+        } else {
+            document.getElementById('tab-btn-overview').classList.add('active');
+            document.getElementById('admin-tab-overview').style.display = 'block';
+        }
+    }
+
+    async function loadAllAdminTickets() {
+        const res = await Admin.getSupportTickets();
+        if (res.ok && Array.isArray(res.data)) {
+            allAdminTickets = res.data;
+            adminTicketsMap = {};
+            allAdminTickets.forEach(t => { adminTicketsMap[t.request_id] = t; });
+            renderAllAdminTicketsTable(allAdminTickets);
+        }
+    }
+
+    async function filterAdminTickets() {
+        const q = document.getElementById('ticket-search-input').value.trim();
+        const status = document.getElementById('ticket-status-filter').value;
+        const category = document.getElementById('ticket-category-filter').value;
+
+        const filters = {};
+        if (q) filters.q = q;
+        if (status !== 'all') filters.status = status;
+        if (category !== 'all') filters.category = category;
+
+        const res = await Admin.getSupportTickets(filters);
+        if (res.ok && Array.isArray(res.data)) {
+            allAdminTickets = res.data;
+            adminTicketsMap = {};
+            allAdminTickets.forEach(t => { adminTicketsMap[t.request_id] = t; });
+            renderAllAdminTicketsTable(allAdminTickets);
+        }
+    }
+
+    function resetTicketFilters() {
+        document.getElementById('ticket-search-input').value = '';
+        document.getElementById('ticket-status-filter').value = 'all';
+        document.getElementById('ticket-category-filter').value = 'all';
+        filterAdminTickets();
+    }
+
+    function renderOverviewTicketsTable(tickets) {
+        const tbody = document.getElementById('overview-tickets-table-body');
+        if (!tickets.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No support requests submitted yet.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = tickets.map(t => `
+            <tr style="cursor:pointer;" onclick="openAdminTicketModal(${t.request_id})">
+                <td>#${t.request_id}</td>
+                <td>
+                    <strong>${escapeHtml(t.student_name)}</strong><br>
+                    <span style="font-size:0.775rem; color:var(--text-muted);">${escapeHtml(t.student_email)}</span>
+                </td>
+                <td><span class="badge" style="background:var(--primary-light); color:var(--primary);">${escapeHtml(t.category)}</span></td>
+                <td style="max-width:240px; word-break:break-word;">${escapeHtml(t.description.length > 70 ? t.description.substring(0, 70) + '...' : t.description)}</td>
+                <td style="white-space:nowrap; font-size:0.8rem; color:var(--text-muted);">${fmtDate(t.created_at)}</td>
+                <td><span class="status-badge ${t.status.replace(/\s+/g,'-')}">${t.status}</span></td>
+                <td onclick="event.stopPropagation()">
+                    <button class="btn btn-secondary btn-sm" onclick="openAdminTicketModal(${t.request_id})" style="padding:4px 8px; font-size:0.75rem;">🔍 View Details</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderAllAdminTicketsTable(tickets) {
+        const tbody = document.getElementById('all-tickets-table-body');
+        document.getElementById('tickets-count-label').textContent = `${tickets.length} tickets found`;
+
+        if (!tickets.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No matching support tickets found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = tickets.map(t => `
+            <tr style="cursor:pointer;" onclick="openAdminTicketModal(${t.request_id})">
+                <td><strong>#${t.request_id}</strong></td>
+                <td>
+                    <strong>${escapeHtml(t.student_name)}</strong><br>
+                    <span style="font-size:0.775rem; color:var(--text-muted);">${escapeHtml(t.student_email)}</span>
+                    ${t.student_department ? `<br><span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(t.student_department)} (Yr ${t.student_year})</span>` : ''}
+                </td>
+                <td><span class="badge" style="background:var(--primary-light); color:var(--primary);">${escapeHtml(t.category)}</span></td>
+                <td style="max-width:260px; word-break:break-word;">${escapeHtml(t.description.length > 80 ? t.description.substring(0, 80) + '...' : t.description)}</td>
+                <td style="white-space:nowrap; font-size:0.8rem; color:var(--text-muted);">${fmtDate(t.created_at)}</td>
+                <td><span class="status-badge ${t.status.replace(/\s+/g,'-')}">${t.status}</span></td>
+                <td onclick="event.stopPropagation()">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="btn btn-primary btn-sm" onclick="openAdminTicketModal(${t.request_id})" style="padding:4px 8px; font-size:0.75rem;">🔍 View & Reply</button>
+                        <select class="status-select" onchange="changeTicketStatusDirect(${t.request_id}, this.value)">
+                            <option value="Open" ${t.status==='Open'?'selected':''}>Open</option>
+                            <option value="In Progress" ${t.status==='In Progress'?'selected':''}>In Progress</option>
+                            <option value="Resolved" ${t.status==='Resolved'?'selected':''}>Resolved</option>
+                        </select>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderOverviewFeedbackTable(feedbackList) {
+        const tbody = document.getElementById('overview-feedback-table-body');
+        document.getElementById('all-feedback-count-label').textContent = `${feedbackList.length} submissions`;
+
+        if (!feedbackList.length) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No feedback submitted yet.</td></tr>`;
+            return;
+        }
+
+        const htmlStr = feedbackList.map(f => `
+            <tr>
+                <td>#${f.feedback_id}</td>
+                <td>
+                    <strong>${escapeHtml(f.student_name)}</strong><br>
+                    <span style="font-size:0.775rem; color:var(--text-muted);">${escapeHtml(f.student_email)}</span>
+                </td>
+                <td><span class="star-rating">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span></td>
+                <td><span class="badge" style="background:var(--primary-light); color:var(--primary);">${escapeHtml(f.category)}</span></td>
+                <td style="max-width:280px; word-break:break-word;">${escapeHtml(f.message)}</td>
+                <td>${f.allow_contact ? '✅ Yes' : '❌ No'}</td>
+                <td><span class="status-badge ${f.status.replace(/\s+/g,'-')}">${f.status}</span></td>
+                <td>
+                    <select class="status-select" onchange="changeFeedbackStatus(${f.feedback_id}, this.value)">
+                        <option value="Open" ${f.status==='Open'?'selected':''}>Open</option>
+                        <option value="In Progress" ${f.status==='In Progress'?'selected':''}>In Progress</option>
+                        <option value="Resolved" ${f.status==='Resolved'?'selected':''}>Resolved</option>
+                    </select>
+                </td>
+            </tr>
+        `).join('');
+
+        tbody.innerHTML = htmlStr;
+        const allTbody = document.getElementById('all-feedback-table-body');
+        if (allTbody) allTbody.innerHTML = htmlStr;
+    }
+
+    function openAdminTicketModal(ticketId) {
+        const id = parseInt(ticketId, 10);
+        const ticket = adminTicketsMap[id];
+        if (!ticket) return;
+
+        activeModalTicketId = id;
+
+        document.getElementById('modal-admin-ticket-id').textContent = `Ticket #${ticket.request_id} Full Details`;
+        document.getElementById('modal-ticket-user-name').textContent = ticket.student_name || 'Student User';
+        document.getElementById('modal-ticket-user-email').textContent = ticket.student_email || '—';
+        document.getElementById('modal-ticket-category').textContent = ticket.category || 'General';
+        document.getElementById('modal-ticket-date').textContent = fmtDate(ticket.created_at);
+        document.getElementById('modal-ticket-desc').textContent = ticket.description || 'No description provided.';
+        document.getElementById('modal-ticket-status-select').value = ticket.status || 'Open';
+        document.getElementById('modal-ticket-admin-reply').value = ticket.admin_reply || '';
+
+        const alertBox = document.getElementById('modal-ticket-alert');
+        if (alertBox) alertBox.innerHTML = '';
+
+        const modal = document.getElementById('admin-ticket-modal');
+        modal.classList.add('show', 'active');
+        modal.style.display = 'flex';
+    }
+
+    function closeAdminTicketModal() {
+        const modal = document.getElementById('admin-ticket-modal');
+        modal.classList.remove('show', 'active');
+        modal.style.display = 'none';
+        activeModalTicketId = null;
+    }
+
+    async function saveAdminTicketModal() {
+        if (!activeModalTicketId) return;
+
+        const alertBox = document.getElementById('modal-ticket-alert');
+        const newStatus = document.getElementById('modal-ticket-status-select').value;
+        const adminReply = document.getElementById('modal-ticket-admin-reply').value.trim();
+
+        const res = await Admin.updateTicket(activeModalTicketId, { status: newStatus, admin_reply: adminReply });
+
+        if (res.ok) {
+            showAlert(document.getElementById('alert-box'), `Ticket #${activeModalTicketId} updated successfully!`, 'success');
+            closeAdminTicketModal();
+            await loadAdminOverview();
+        } else {
+            showAlert(alertBox, res.data.error || 'Failed to update ticket.', 'error');
+        }
+    }
+
+    async function changeTicketStatusDirect(requestId, status) {
+        const alertBox = document.getElementById('alert-box');
+        const res = await Admin.updateTicketStatus(requestId, status);
+        if (res.ok) {
+            showAlert(alertBox, `Support ticket #${requestId} status updated to "${status}"`, 'success');
+            await loadAdminOverview();
+        } else {
+            showAlert(alertBox, res.data.error || 'Failed to update ticket status', 'error');
+        }
+    }
+
+    async function changeFeedbackStatus(feedbackId, status) {
+        const alertBox = document.getElementById('alert-box');
+        const res = await Admin.updateFeedbackStatus(feedbackId, status);
+        if (res.ok) {
+            showAlert(alertBox, `Feedback #${feedbackId} status updated to "${status}"`, 'success');
+            await loadAdminOverview();
+        } else {
+            showAlert(alertBox, res.data.error || 'Failed to update feedback status', 'error');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function fmtDate(str) {
+        if (!str) return '—';
+        const d = new Date(str);
+        if (isNaN(d)) return str;
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    loadAdminOverview();
+</script>
+</body>
+</html>

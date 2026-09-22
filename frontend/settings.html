@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/settings.css?v=1.0">
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> SkillX
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>⚙️ Settings</h1>
+        <p>Manage your account, notifications, privacy, session preferences, and appearance.</p>
+    </div>
+
+    <div id="settings-alert"></div>
+
+    <div class="settings-layout">
+        <!-- Sidebar Navigation Tabs -->
+        <div class="settings-nav">
+            <button type="button" class="settings-tab-btn active" data-tab="account">
+                <span class="tab-icon">👤</span> Account
+            </button>
+            <button type="button" class="settings-tab-btn" data-tab="notifications">
+                <span class="tab-icon">🔔</span> Notifications
+            </button>
+            <button type="button" class="settings-tab-btn" data-tab="privacy">
+                <span class="tab-icon">🔒</span> Privacy
+            </button>
+            <button type="button" class="settings-tab-btn" data-tab="sessions">
+                <span class="tab-icon">⏱️</span> Session Preferences
+            </button>
+            <button type="button" class="settings-tab-btn" data-tab="appearance">
+                <span class="tab-icon">🎨</span> Appearance
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="settings-content-panel">
+
+            <!-- ── TAB 1: ACCOUNT ────────────────────────────── -->
+            <div class="settings-section active" id="tab-account">
+                <div class="section-title">👤 Account Settings</div>
+                <div class="section-desc">Manage your email address, security credentials, and account status.</div>
+
+                <div id="account-alert"></div>
+
+                <!-- Email Card -->
+                <div class="settings-card">
+                    <div class="settings-card-title">📧 Email Address</div>
+                    <form onsubmit="handleUpdateEmail(event)">
+                        <div class="form-group">
+                            <label for="account-email">Current Email</label>
+                            <input type="email" id="account-email" class="form-control" required placeholder="your.email@college.edu">
+                            <div class="form-hint">Used for authentication, notifications, and account recovery.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Email</button>
+                    </form>
+                </div>
+
+                <!-- Password Change Card -->
+                <div class="settings-card">
+                    <div class="settings-card-title">🔑 Change Password</div>
+
+                    <div id="google-password-notice" style="display:none;" class="alert alert-info">
+                        ℹ️ Password change is managed via Google Authentication for your account.
+                    </div>
+
+                    <form id="password-change-form" onsubmit="handleChangePassword(event)">
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" class="form-control" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" class="form-control" placeholder="At least 6 characters">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm New Password</label>
+                            <input type="password" id="confirm-password" class="form-control" placeholder="Re-enter new password">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+                    </form>
+                </div>
+
+                <!-- Danger Zone Card -->
+                <div class="settings-card danger-card">
+                    <div class="settings-card-title">⚠️ Danger Zone</div>
+                    <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">
+                        Deleting your account will permanently erase your profile, skills, messages, notes, and session history. This action cannot be undone.
+                    </p>
+                    <button type="button" class="btn-danger" onclick="openDeleteAccountModal()">Delete Account</button>
+                </div>
+            </div>
+
+            <!-- ── TAB 2: NOTIFICATIONS ──────────────────────── -->
+            <div class="settings-section" id="tab-notifications">
+                <div class="section-title">🔔 Notification Preferences</div>
+                <div class="section-desc">Choose which activities and alerts you want to receive.</div>
+
+                <div id="notifications-alert"></div>
+
+                <form onsubmit="handleSaveNotifications(event)">
+                    <div class="settings-card">
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Exchange Requests</h4>
+                                <p>Get notified when a peer sends you a skill exchange request or accepts yours.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="notif-requests">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Messages & Chats</h4>
+                                <p>Get notified when you receive direct messages or group announcements.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="notif-messages">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Learning Sessions</h4>
+                                <p>Receive reminders for upcoming, confirmed, or rescheduled learning sessions.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="notif-sessions">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Smart Matches</h4>
+                                <p>Receive automatic recommendations for relevant peer teachers and learners.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="notif-smart-matches">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Notification Settings</button>
+                </form>
+            </div>
+
+            <!-- ── TAB 3: PRIVACY ────────────────────────────── -->
+            <div class="settings-section" id="tab-privacy">
+                <div class="section-title">🔒 Privacy Controls</div>
+                <div class="section-desc">Control who can interact with you and view your profile details.</div>
+
+                <div id="privacy-alert"></div>
+
+                <form onsubmit="handleSavePrivacy(event)">
+                    <!-- Request Permissions Card -->
+                    <div class="settings-card">
+                        <div class="settings-card-title">🤝 Skill Exchange Request Permissions</div>
+                        <p class="form-hint" style="margin-bottom: 12px;">Select who is allowed to send you new skill exchange requests.</p>
+                        <div class="radio-card-grid">
+                            <label class="radio-card">
+                                <input type="radio" name="request_permissions" value="everyone" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>Everyone</h5>
+                                    <p>Any registered SkillX student can send you requests.</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="request_permissions" value="connections" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>Connections Only</h5>
+                                    <p>Only students you have interacted with or accepted.</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="request_permissions" value="nobody" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>Nobody</h5>
+                                    <p>Temporarily pause incoming exchange requests.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Profile Visibility Card -->
+                    <div class="settings-card">
+                        <div class="settings-card-title">👁️ Profile Visibility</div>
+                        <p class="form-hint" style="margin-bottom: 12px;">Choose who can view your profile bio, skills catalogue, and badges.</p>
+                        <div class="radio-card-grid">
+                            <label class="radio-card">
+                                <input type="radio" name="profile_visibility" value="public" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>Public</h5>
+                                    <p>Visible to all users on SkillX search and directory.</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="profile_visibility" value="students" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>Registered Students</h5>
+                                    <p>Visible only to logged-in students.</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="profile_visibility" value="private" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>Private</h5>
+                                    <p>Hide profile from search results.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm">Save Privacy Settings</button>
+                </form>
+            </div>
+
+            <!-- ── TAB 4: SESSION PREFERENCES ────────────────── -->
+            <div class="settings-section" id="tab-sessions">
+                <div class="section-title">⏱️ Session Preferences</div>
+                <div class="section-desc">Customize default duration and availability schedules for your learning sessions.</div>
+
+                <div id="session-alert"></div>
+
+                <form onsubmit="handleSaveSessionPrefs(event)">
+                    <div class="settings-card">
+                        <div class="form-group">
+                            <label for="session-duration">Default Session Duration</label>
+                            <select id="session-duration" class="form-control">
+                                <option value="30">30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60">60 minutes (1 hour)</option>
+                                <option value="90">90 minutes (1.5 hours)</option>
+                            </select>
+                            <div class="form-hint">Used as the pre-selected length when scheduling new exchange sessions.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="session-availability">General Availability Window</label>
+                            <select id="session-availability" class="form-control">
+                                <option value="anytime">Anytime (Flexible schedule)</option>
+                                <option value="weekdays">Weekdays Only (Mon - Fri)</option>
+                                <option value="weekends">Weekends Only (Sat - Sun)</option>
+                                <option value="evenings">Evenings Only (After 5 PM)</option>
+                            </select>
+                            <div class="form-hint">Helps peer learners propose suitable time slots for exchange.</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Session Preferences</button>
+                </form>
+            </div>
+
+            <!-- ── TAB 5: APPEARANCE ─────────────────────────── -->
+            <div class="settings-section" id="tab-appearance">
+                <div class="section-title">🎨 Appearance & Theme</div>
+                <div class="section-desc">Customize how SkillX looks on your device.</div>
+
+                <div id="appearance-alert"></div>
+
+                <form onsubmit="handleSaveAppearance(event)">
+                    <div class="settings-card">
+                        <div class="settings-card-title">🖥️ Interface Theme</div>
+                        <div class="radio-card-grid">
+                            <label class="radio-card">
+                                <input type="radio" name="theme" value="light" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>☀️ Light Theme</h5>
+                                    <p>Clean blue & white background for bright environments.</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="theme" value="dark" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>🌙 Dark Theme</h5>
+                                    <p>Sleek dark background to reduce eye strain in dark settings.</p>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="theme" value="system" onclick="handleRadioCardClick(this)">
+                                <div class="radio-card-body">
+                                    <h5>🖥️ System Preference</h5>
+                                    <p>Automatically match your operating system's theme.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Theme Settings</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ── ACCOUNT DELETION CONFIRMATION MODAL ─────────────────── -->
+<div class="modal-overlay" id="delete-modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Confirm Account Deletion</h3>
+        </div>
+        <div class="modal-body">
+            <div id="delete-modal-alert"></div>
+            <p>Are you sure you want to permanently delete your SkillX account? All your profile information, skills, requests, messages, notes, and credits will be erased forever.</p>
+            <div class="form-group">
+                <label for="delete-confirm-input" style="font-weight:600; font-size:0.88rem;">Type <strong style="color:var(--danger)">DELETE</strong> to confirm:</label>
+                <input type="text" id="delete-confirm-input" class="form-control" placeholder="DELETE">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-sm" onclick="closeDeleteAccountModal()">Cancel</button>
+            <button type="button" class="btn-danger btn-sm" onclick="confirmDeleteAccount()">Delete Account</button>
+        </div>
+    </div>
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
+<script src="js/settings.js?v=1.0"></script>
+</body>
+</html>

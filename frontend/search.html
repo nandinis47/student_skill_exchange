@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Students - SkillX</title>
-    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <link rel="stylesheet" href="css/style.css?v=2.3">
     <style>
         .search-section {
             background: white;
@@ -77,6 +78,7 @@
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
         <a href="dashboard.html" class="navbar-brand">
@@ -92,9 +94,22 @@
             <li><a href="profile.html" data-page="profile">👤 Profile</a></li>
         </ul>
         <div class="navbar-user">
-            <div class="user-avatar" id="nav-avatar">?</div>
-            <span id="nav-user-name" style="font-size:0.875rem;font-weight:500;"></span>
-            <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+            <div class="user-dropdown">
+                <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true"
+                    aria-expanded="false">
+                    <div class="user-avatar" id="nav-avatar">?</div>
+                    <span id="nav-user-name" class="nav-user-name-text"></span>
+                    <span class="dropdown-chevron">▼</span>
+                </button>
+                <div class="user-dropdown-menu" id="user-dropdown-menu">
+                    <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                    <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                    <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span>
+                        Logout</button>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -112,8 +127,8 @@
                 <div class="form-group" style="flex:2;">
                     <label>Search by Skill</label>
                     <input type="text" class="form-control" id="search-input"
-                           placeholder="e.g. Python, React, Machine Learning..."
-                           onkeyup="if(event.key==='Enter') doSearch()">
+                        placeholder="e.g. Python, React, Machine Learning..."
+                        onkeyup="if(event.key==='Enter') doSearch()">
                 </div>
                 <div class="form-group">
                     <label>Filter by</label>
@@ -137,7 +152,9 @@
             <div class="results-count" id="results-count"></div>
         </div>
         <div id="results-container">
-            <div class="loading-overlay"><div class="spinner"></div></div>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
         </div>
     </div>
 
@@ -149,12 +166,48 @@
                 <button class="modal-close" onclick="closeModal()">✕</button>
             </div>
             <div class="profile-modal-body" id="modal-body">
-                <div class="loading-overlay"><div class="spinner"></div></div>
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                </div>
             </div>
         </div>
-    </div>
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-links">
+                <a href="dashboard.html" class="footer-brand">SkillX</a>
+                <span class="footer-sep">|</span>
+                <a href="dashboard.html">Dashboard</a>
+                <span class="footer-sep">|</span>
+                <a href="skills.html">My Skills</a>
+                <span class="footer-sep">|</span>
+                <a href="search.html">Search</a>
+                <span class="footer-sep">|</span>
+                <a href="requests.html">Requests</a>
+                <span class="footer-sep">|</span>
+                <a href="messages.html">Messages</a>
+                <span class="footer-sep">|</span>
+                <a href="support.html">Help & Support</a>
+                <span class="footer-sep">|</span>
+                <a href="feedback.html">Give Feedback</a>
+                <span class="footer-sep">|</span>
+                <a href="privacy.html">Privacy Policy</a>
+                <span class="footer-sep">|</span>
+                <a href="terms.html">Terms</a>
+            </div>
+            <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+                <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+                <span class="ft-dot">•</span>
+                <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+                <span class="ft-dot">•</span>
+                <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+                <span class="ft-dot">•</span>
+                <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+            </p>
+            <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+        </div>
+    </footer>
 
-    <script src="js/api.js?v=2.0"></script>
+    <script src="js/api.js?v=2.1"></script>
     <script>
         requireAuth();
         renderNavUser();
@@ -162,6 +215,18 @@
 
         const student = getCurrentStudent();
         let allSkills = [];
+        let searchConnectedIds = new Set();  // accepted connections for this student
+
+        // Load accepted connection IDs once on page load
+        Requests.getForStudent(student.id).then(res => {
+            if (!res.ok) return;
+            res.data.forEach(r => {
+                if (r.status === 'accepted') {
+                    const otherId = r.sender_id === student.id ? r.receiver_id : r.sender_id;
+                    searchConnectedIds.add(otherId);
+                }
+            });
+        });
 
         Skills.getAll().then(res => {
             if (res.ok) allSkills = res.data;
@@ -177,7 +242,7 @@
 
         async function doSearch() {
             const skill = document.getElementById('search-input').value.trim();
-            const type  = document.getElementById('search-type').value;
+            const type = document.getElementById('search-type').value;
 
             if (!skill) { loadAll(); return; }
 
@@ -190,7 +255,7 @@
 
         function renderResults(students, isSearch = false) {
             const container = document.getElementById('results-container');
-            const countEl   = document.getElementById('results-count');
+            const countEl = document.getElementById('results-count');
             countEl.textContent = `${students.length} student${students.length !== 1 ? 's' : ''} found`;
 
             if (!students.length) {
@@ -216,13 +281,13 @@
                         <div class="skills-section">
                             <div class="skills-section-label">Teaches</div>
                             <div>${s.teaches.split(', ').map(sk =>
-                                `<span class="skill-tag">⚡ ${sk}</span>`).join('')}</div>
+                `<span class="skill-tag">⚡ ${sk}</span>`).join('')}</div>
                         </div>` : ''}
                         ${s.learns ? `
                         <div class="skills-section" style="margin-top:8px;">
                             <div class="skills-section-label">Wants to Learn</div>
                             <div>${s.learns.split(', ').map(sk =>
-                                `<span class="skill-tag" style="background:#e6f4ea;color:#137333;">📚 ${sk}</span>`).join('')}</div>
+                    `<span class="skill-tag" style="background:#e6f4ea;color:#137333;">📚 ${sk}</span>`).join('')}</div>
                         </div>` : ''}
                         <div style="margin-top:12px;">
                             <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openStudentModal(${s.id})">
@@ -247,7 +312,7 @@
 
             const s = res.data;
             const teaches = s.skills.filter(sk => sk.type === 'teach');
-            const learns  = s.skills.filter(sk => sk.type === 'learn');
+            const learns = s.skills.filter(sk => sk.type === 'learn');
 
             modalBody.innerHTML = `
                 <div class="profile-modal-header">
@@ -283,9 +348,13 @@
                         <button class="btn btn-primary" onclick="sendRequest(${s.id})">
                             🔄 Send Request
                         </button>
-                        <button class="btn btn-secondary" onclick="window.location.href='messages.html?to=${s.id}&name=${encodeURIComponent(s.name)}'">
+                        ${searchConnectedIds.has(s.id)
+                    ? `<button class="btn btn-secondary" onclick="window.location.href='messages.html?to=${s.id}&name=${encodeURIComponent(s.name)}'">
                             💬 Message
-                        </button>
+                        </button>`
+                    : `<button class="btn btn-secondary" onclick="sendConnectFromSearch(${s.id},'${s.name.replace(/'/g, "\\'")}')">
+                            🔗 Connect
+                        </button>`}
                     </div>
                     <div id="req-alert" style="margin-top:10px;"></div>
                 </div>
@@ -294,7 +363,7 @@
 
         async function sendRequest(receiver_id) {
             const skill_id = document.getElementById('req-skill-id').value;
-            const alertEl  = document.getElementById('req-alert');
+            const alertEl = document.getElementById('req-alert');
 
             if (!skill_id) {
                 showAlert(alertEl, 'Please select a skill', 'error');
@@ -313,13 +382,130 @@
             document.getElementById('student-modal').classList.remove('active');
         }
 
+        // ── Connect popup state ───────────────────────────────
+        let connectPopupTargetId = null;
+        let connectPopupTargetName = '';
+
+        // Called when 🔗 Connect button is clicked in the student modal
+        function sendConnectFromSearch(targetId, targetName) {
+            connectPopupTargetId = targetId;
+            connectPopupTargetName = targetName;
+            // Reset popup fields
+            document.getElementById('connect-popup-note').value = '';
+            document.getElementById('connect-popup-alert').innerHTML = '';
+            const sendBtn = document.getElementById('connect-popup-send');
+            if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Request →'; }
+            document.getElementById('connect-popup').classList.add('active');
+        }
+
+        function closeConnectPopup() {
+            document.getElementById('connect-popup').classList.remove('active');
+        }
+
+        async function submitConnectPopup() {
+            const note = document.getElementById('connect-popup-note').value.trim();
+            const alertEl = document.getElementById('connect-popup-alert');
+            const sendBtn = document.getElementById('connect-popup-send');
+
+            if (!note) {
+                showAlert(alertEl, 'Please write a short note before sending.', 'error');
+                document.getElementById('connect-popup-note').focus();
+                return;
+            }
+
+            // Duplicate check
+            const reqRes = await Requests.getForStudent(student.id);
+            if (reqRes.ok) {
+                const existing = reqRes.data.find(r =>
+                    (r.sender_id === student.id && r.receiver_id === connectPopupTargetId) ||
+                    (r.receiver_id === student.id && r.sender_id === connectPopupTargetId)
+                );
+                if (existing && existing.status === 'pending') {
+                    showAlert(alertEl, `A request to ${connectPopupTargetName} is already pending.`, 'info');
+                    return;
+                }
+                if (existing && existing.status === 'accepted') {
+                    closeConnectPopup();
+                    window.location.href = `messages.html?to=${connectPopupTargetId}&name=${encodeURIComponent(connectPopupTargetName)}`;
+                    return;
+                }
+            }
+
+            // Pick a skill_id to attach
+            let skillId = document.getElementById('req-skill-id')?.value;
+            if (!skillId) {
+                const skillsRes = await apiFetch('/skills');
+                if (skillsRes.ok && skillsRes.data.length) skillId = skillsRes.data[0].skill_id;
+            }
+            if (!skillId) {
+                showAlert(alertEl, 'No skills available. Add skills first.', 'error');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending…';
+
+            const res = await Requests.send(student.id, connectPopupTargetId, skillId, note);
+
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Request →';
+
+            if (res.ok) {
+                showAlert(alertEl,
+                    `Request sent to ${connectPopupTargetName}! You can message them once they accept.`,
+                    'success');
+                sendBtn.disabled = true;
+                sendBtn.textContent = '✓ Request Sent';
+                // Also update the Connect button in the student modal
+                document.querySelectorAll('#modal-body button').forEach(b => {
+                    if (b.textContent.trim() === '🔗 Connect') {
+                        b.textContent = '✓ Request Sent';
+                        b.disabled = true;
+                    }
+                });
+            } else {
+                showAlert(alertEl, res.data?.error || 'Failed to send request.', 'error');
+            }
+        }
+
         // Close modal on overlay click
-        document.getElementById('student-modal').addEventListener('click', function(e) {
+        document.getElementById('student-modal').addEventListener('click', function (e) {
             if (e.target === this) closeModal();
+        });
+
+        // Close connect popup on overlay click
+        document.getElementById('connect-popup').addEventListener('click', function (e) {
+            if (e.target === this) closeConnectPopup();
         });
 
         // Load all students on page load
         loadAll();
     </script>
+
+    <!-- Connect popup — required note before sending a connection request -->
+    <div class="modal-overlay" id="connect-popup">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>🔗 Send Connection Request</h3>
+                <button class="modal-close" onclick="closeConnectPopup()">✕</button>
+            </div>
+            <p id="connect-popup-desc" style="font-size:0.875rem;color:var(--text-muted);margin-bottom:14px;">
+                Tell this person why you want to connect.
+            </p>
+            <div class="form-group">
+                <label>Your note <span style="color:var(--danger)">*</span></label>
+                <textarea class="form-control" id="connect-popup-note" rows="3"
+                    placeholder="Hi! I'd like to connect because…" style="resize:vertical;"></textarea>
+            </div>
+            <div id="connect-popup-alert"></div>
+            <div style="display:flex;gap:10px;margin-top:4px;">
+                <button class="btn btn-secondary" style="flex:1;justify-content:center;"
+                    onclick="closeConnectPopup()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1;justify-content:center;" id="connect-popup-send"
+                    onclick="submitConnectPopup()">Send Request →</button>
+            </div>
+        </div>
+    </div>
 </body>
+
 </html>

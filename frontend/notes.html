@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes & Work - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/notes.css?v=1.0">
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────── -->
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> SkillX
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="notes.html"     data-page="notes">📝 Notes</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Two-column layout ───────────────────────────────────── -->
+<div class="notes-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="notes-sidebar">
+        <div class="notes-sidebar-header">
+            <h2>📝 Notes &amp; Work</h2>
+            <p>Select a person to open their workspace</p>
+        </div>
+        <div class="notes-sidebar-body" id="sidebar-body">
+            <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.85rem;">
+                Loading connections…
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT WORKSPACE -->
+    <main class="notes-workspace" id="notes-workspace">
+        <div class="workspace-empty" id="workspace-empty">
+            <div class="we-icon">📂</div>
+            <h3>No workspace open</h3>
+            <p>Pick a person from the list on the left to view or create notes and assignments.</p>
+        </div>
+        <!-- Workspace content injected by JS -->
+    </main>
+
+</div>
+
+<!-- ── Create Note / Assignment Modal ──────────────────────── -->
+<div class="notes-modal-overlay" id="create-modal">
+    <div class="notes-modal">
+        <div class="notes-modal-header">
+            <h3 id="create-modal-title">📝 New Note</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeCreateModal()">✕</button>
+        </div>
+        <div class="notes-modal-body">
+            <!-- Note / Assignment tab switcher -->
+            <div class="type-switcher">
+                <button class="type-btn active" id="type-btn-note"       onclick="setNoteType('note')">📝 Note</button>
+                <button class="type-btn"        id="type-btn-assignment" onclick="setNoteType('assignment')">📋 Assignment</button>
+            </div>
+
+            <div class="form-group">
+                <label>Title <span style="color:var(--danger)">*</span></label>
+                <input type="text" class="form-control" id="note-title" placeholder="e.g. Python Functions Summary">
+            </div>
+
+            <div class="form-group">
+                <label id="content-label">Content</label>
+                <textarea class="form-control" id="note-content" rows="5"
+                    placeholder="Write your note here…"
+                    style="resize:vertical;"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Attachment URL <span style="font-weight:400;color:var(--text-muted)">(optional — must be https://)</span></label>
+                <input type="url" class="form-control" id="note-file-url"
+                    placeholder="https://drive.google.com/…">
+                <input type="text" class="form-control" id="note-file-name"
+                    placeholder="Display name (e.g. notes.pdf)"
+                    style="margin-top:6px;">
+            </div>
+
+            <!-- Assignment-only fields -->
+            <div class="assignment-fields" id="assignment-fields">
+                <div class="form-group">
+                    <label>Available From <span style="font-weight:400;color:var(--text-muted)">(leave blank = immediately)</span></label>
+                    <input type="datetime-local" class="form-control" id="note-available-from">
+                </div>
+                <div class="form-group">
+                    <label>Due Date &amp; Time <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+                    <input type="datetime-local" class="form-control" id="note-due-at">
+                </div>
+            </div>
+
+            <div id="create-alert"></div>
+        </div>
+        <div class="notes-modal-footer">
+            <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+            <button class="btn btn-primary"   id="create-submit-btn" onclick="submitCreateNote()">Post Note</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Submit Work Modal (learner) ─────────────────────────── -->
+<div class="submit-modal-overlay" id="submit-modal">
+    <div class="submit-modal">
+        <div class="submit-modal-header">
+            <h3>📤 Submit Your Work</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeSubmitModal()">✕</button>
+        </div>
+        <div class="submit-modal-body">
+            <p id="submit-modal-assignment-title"
+               style="font-size:0.875rem;font-weight:600;color:var(--text-dark);margin-bottom:14px;"></p>
+
+            <div class="form-group">
+                <label>Your Answer / Notes</label>
+                <textarea class="form-control" id="sub-content" rows="4"
+                    placeholder="Write your answer or describe your work…"
+                    style="resize:vertical;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Attachment URL <span style="font-weight:400;color:var(--text-muted)">(optional — must be https://)</span></label>
+                <input type="url" class="form-control" id="sub-file-url"
+                    placeholder="https://drive.google.com/…">
+                <input type="text" class="form-control" id="sub-file-name"
+                    placeholder="Display name"
+                    style="margin-top:6px;">
+            </div>
+            <div id="submit-alert"></div>
+        </div>
+        <div class="submit-modal-footer">
+            <button class="btn btn-secondary" onclick="closeSubmitModal()">Cancel</button>
+            <button class="btn btn-primary"   onclick="confirmSubmitWork()">Submit Work</button>
+        </div>
+    </div>
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
+<script>
+// ============================================================
+//  Notes & Work — page script
+// ============================================================
+requireAuth();
+renderNavUser();
+setActiveNav('notes');
+
+const me = getCurrentStudent();
+
+// ── State ────────────────────────────────────────────────────
+let currentPair   = null;   // { personId, personName, role: 'teacher'|'learner', skillName }
+let allNotes      = [];     // notes for current pair
+let activeNoteId  = null;   // for submit modal
+
+// ── Boot ─────────────────────────────────────────────────────
+async function init() {
+    const res = await apiFetch(`/notes/connections/${me.id}`);
+    if (!res.ok) {
+        document.getElementById('sidebar-body').innerHTML =
+            `<div style="padding:20px;color:var(--danger);font-size:0.85rem;">
+                Failed to load connections. Is the backend running?</div>`;
+        return;
+    }
+    renderSidebar(res.data);
+}
+
+// ── Sidebar ──────────────────────────────────────────────────
+function renderSidebar(data) {
+    const { teaching, learning } = data;
+    const body = document.getElementById('sidebar-body');
+    let html = '';
+
+    // De-duplicate by person (same person may teach multiple skills)
+    const teachMap = {};
+    teaching.forEach(t => {
+        if (!teachMap[t.id]) teachMap[t.id] = { ...t, skills: [] };
+        teachMap[t.id].skills.push(t.skill_name);
+    });
+
+    const learnMap = {};
+    learning.forEach(l => {
+        if (!learnMap[l.id]) learnMap[l.id] = { ...l, skills: [] };
+        learnMap[l.id].skills.push(l.skill_name);
+    });
+
+    if (Object.keys(teachMap).length === 0 && Object.keys(learnMap).length === 0) {
+        body.innerHTML = `<div style="padding:24px 16px;color:var(--text-muted);font-size:0.85rem;text-align:center;">
+            No skill connections yet.<br>Add skills on the
+            <a href="skills.html" style="color:var(--primary);">My Skills</a> page.</div>`;
+        return;
+    }
+
+    if (Object.keys(teachMap).length > 0) {
+        html += `<div class="sidebar-section-label">🎓 People I Teach</div>`;
+        Object.values(teachMap).forEach(p => {
+            html += personRowHTML(p, 'teacher');
+        });
+    }
+
+    if (Object.keys(learnMap).length > 0) {
+        html += `<div class="sidebar-section-label">📚 People I Learn From</div>`;
+        Object.values(learnMap).forEach(p => {
+            html += personRowHTML(p, 'learner');
+        });
+    }
+
+    body.innerHTML = html;
+}
+
+function personRowHTML(p, role) {
+    const initials = getInitials(p.name);
+    const roleClass = role === 'teacher' ? 'teach' : 'learn';
+    const roleLabel = role === 'teacher' ? 'Teaching' : 'Learning';
+    const rowClass  = role === 'learner' ? 'learning-row' : '';
+    const skillText = p.skills.join(', ');
+    return `
+    <div class="person-row ${rowClass}"
+         id="person-row-${role}-${p.id}"
+         onclick="openWorkspace(${p.id}, '${escapeAttr(p.name)}', '${role}', '${escapeAttr(skillText)}')">
+        <div class="p-avatar">${initials}</div>
+        <div class="p-info">
+            <div class="p-name">${p.name}</div>
+            <div class="p-skill">${skillText}</div>
+        </div>
+        <span class="p-role-badge ${roleClass}">${roleLabel}</span>
+    </div>`;
+}
+
+function escapeAttr(s) {
+    return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// ── Open workspace for a person ──────────────────────────────
+async function openWorkspace(personId, personName, role, skillName) {
+    // Highlight selected row
+    document.querySelectorAll('.person-row').forEach(r => r.classList.remove('active'));
+    const rowEl = document.getElementById(`person-row-${role}-${personId}`);
+    if (rowEl) rowEl.classList.add('active');
+
+    currentPair = { personId, personName, role, skillName };
+
+    // Determine teacher/learner IDs
+    const teacherId  = role === 'teacher' ? me.id : personId;
+    const learnerId  = role === 'teacher' ? personId : me.id;
+
+    const ws = document.getElementById('notes-workspace');
+    ws.innerHTML = `<div class="workspace-empty"><div class="we-icon" style="font-size:1.6rem;opacity:0.5;">⏳</div><p>Loading…</p></div>`;
+
+    const res = await apiFetch(
+        `/notes/for-pair?teacher_id=${teacherId}&learner_id=${learnerId}&viewer_id=${me.id}`
+    );
+
+    allNotes = res.ok ? res.data : [];
+    renderWorkspace();
+}
+
+// ── Render workspace ─────────────────────────────────────────
+function renderWorkspace() {
+    if (!currentPair) return;
+    const { personName, role, skillName } = currentPair;
+    const isTeacher = role === 'teacher';
+
+    let headerHTML = `
+    <div class="workspace-header">
+        <div class="wh-left">
+            <div class="wh-avatar ${isTeacher ? '' : 'is-teacher'}">${getInitials(personName)}</div>
+            <div>
+                <div class="wh-name">${personName}</div>
+                <div class="wh-sub">
+                    ${isTeacher
+                        ? `You are teaching · ${skillName}`
+                        : `Teaching you · ${skillName}`}
+                </div>
+            </div>
+        </div>
+        ${isTeacher
+            ? `<button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ Add Note / Assignment</button>`
+            : ''}
+    </div>`;
+
+    let notesHTML;
+    if (allNotes.length === 0) {
+        notesHTML = `<div class="notes-empty">
+            <div class="ne-icon">📭</div>
+            <p>${isTeacher
+                ? 'No notes yet. Click "+ Add Note / Assignment" to create one.'
+                : 'No notes or assignments yet. Your teacher hasn\'t posted anything.'}</p>
+        </div>`;
+    } else {
+        notesHTML = allNotes.map(n => renderNoteCard(n, isTeacher)).join('');
+    }
+
+    document.getElementById('notes-workspace').innerHTML =
+        headerHTML +
+        `<div class="notes-list-area">${notesHTML}</div>`;
+}
+
+// ── Render a single note card ─────────────────────────────────
+function renderNoteCard(n, isTeacher) {
+    const isAssignment = n.note_type === 'assignment';
+    const typeIcon     = isAssignment ? '📋' : '📝';
+    const now          = new Date();
+
+    // Compute status
+    let status = '';
+    let statusLabel = '';
+    if (!isAssignment) {
+        status = 'note'; statusLabel = '📝 Note';
+    } else {
+        const avail = n.available_from ? new Date(n.available_from) : null;
+        const due   = n.due_at         ? new Date(n.due_at)         : null;
+        const submitted = n.submitted_at_val || (n.latest_sub_id && isTeacher ? 'yes' : null);
+
+        if (avail && now < avail) {
+            status = 'upcoming';
+            statusLabel = '⏳ Upcoming';
+        } else if (submitted || (isTeacher && n.submission_count > 0)) {
+            status = 'submitted';
+            statusLabel = '✅ Submitted';
+        } else if (due && now > due) {
+            status = 'overdue';
+            statusLabel = '🔴 Overdue';
+        } else {
+            status = 'available';
+            statusLabel = '🟢 Available';
+        }
+    }
+
+    // Meta chips
+    let metaHTML = '';
+    if (n.skill_name) {
+        metaHTML += `<span class="note-meta-chip">⚡ ${n.skill_name}</span>`;
+    }
+    if (n.available_from) {
+        metaHTML += `<span class="note-meta-chip">🕐 Available: ${fmtDatetime(n.available_from)}</span>`;
+    }
+    if (n.due_at) {
+        metaHTML += `<span class="note-meta-chip">📅 Due: ${fmtDatetime(n.due_at)}</span>`;
+    }
+    metaHTML += `<span class="note-meta-chip">Posted: ${fmtDatetime(n.created_at)}</span>`;
+
+    // Attachment
+    let attachHTML = '';
+    if (n.file_url) {
+        attachHTML = `<a href="${n.file_url}" target="_blank" rel="noopener" class="note-attachment">
+            📎 ${n.file_name || 'View Attachment'}
+        </a>`;
+    }
+
+    // Teacher: show submission list; Learner: show submit button
+    let bottomHTML = '';
+    if (isAssignment) {
+        if (isTeacher) {
+            bottomHTML = renderSubmissionsBlock(n);
+        } else {
+            bottomHTML = renderSubmitBlock(n, status);
+        }
+    }
+
+    // Teacher: delete button
+    let actionsHTML = `<span class="status-badge status-${status}">${statusLabel}</span>`;
+    if (isTeacher) {
+        actionsHTML += `<button class="btn btn-secondary btn-sm"
+            onclick="deleteNote(${n.note_id})" title="Delete">🗑</button>`;
+    }
+
+    return `
+    <div class="note-card" id="note-card-${n.note_id}">
+        <div class="note-card-header">
+            <div class="note-card-title">
+                <span class="note-type-icon">${typeIcon}</span>
+                ${n.title}
+            </div>
+            <div class="note-card-actions">${actionsHTML}</div>
+        </div>
+        ${n.content ? `<div class="note-card-body">${n.content}</div>` : ''}
+        ${attachHTML}
+        <div class="note-card-meta" style="margin-top:10px;">${metaHTML}</div>
+        ${bottomHTML}
+    </div>`;
+}
+
+// ── Submissions block — teacher view ─────────────────────────
+function renderSubmissionsBlock(n) {
+    if (!n.submission_count || n.submission_count === 0) {
+        return `<div class="submissions-list">
+            <div class="submissions-list-title">📤 Submissions
+                <span class="note-meta-chip">0</span>
+            </div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">No submissions yet.</div>
+        </div>`;
+    }
+    return `<div class="submissions-list">
+        <div class="submissions-list-title">📤 Submissions
+            <span class="note-meta-chip">${n.submission_count}</span>
+        </div>
+        <div id="subs-${n.note_id}">
+            <button class="btn btn-outline btn-sm" onclick="loadSubmissions(${n.note_id})">
+                View Submissions
+            </button>
+        </div>
+    </div>`;
+}
+
+// ── Submit block — learner view ───────────────────────────────
+function renderSubmitBlock(n, status) {
+    if (status === 'upcoming') {
+        return `<div class="submission-block">
+            <div class="submission-block-title">Your Submission</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">
+                Not available yet — opens ${fmtDatetime(n.available_from)}
+            </div>
+        </div>`;
+    }
+    if (status === 'submitted') {
+        return `<div class="submission-block">
+            <div class="submission-block-title">Your Submission</div>
+            <div class="submitted-badge">✅ Submitted ${fmtDatetime(n.submitted_at_val)}</div>
+            <button class="btn btn-outline btn-sm" onclick="openSubmitModal(${n.note_id}, '${escapeAttr(n.title)}')">
+                Resubmit
+            </button>
+        </div>`;
+    }
+    if (status === 'overdue') {
+        return `<div class="submission-block">
+            <div class="submission-block-title">Your Submission</div>
+            <div style="font-size:0.8rem;color:var(--danger);">⚠️ Due date passed.</div>
+        </div>`;
+    }
+    // available
+    return `<div class="submission-block">
+        <div class="submission-block-title">Your Submission</div>
+        <button class="btn btn-primary btn-sm" onclick="openSubmitModal(${n.note_id}, '${escapeAttr(n.title)}')">
+            📤 Submit Work
+        </button>
+    </div>`;
+}
+
+// ── Load & display submissions for a note (teacher) ──────────
+async function loadSubmissions(noteId) {
+    const el = document.getElementById(`subs-${noteId}`);
+    el.innerHTML = '<span style="font-size:0.8rem;color:var(--text-muted);">Loading…</span>';
+
+    const res = await apiFetch(`/notes/${noteId}/submissions`);
+    if (!res.ok || res.data.length === 0) {
+        el.innerHTML = '<div style="font-size:0.8rem;color:var(--text-muted);">No submissions yet.</div>';
+        return;
+    }
+
+    el.innerHTML = res.data.map(s => `
+    <div class="submission-item">
+        <div class="sub-text">
+            ${s.content ? s.content : '<em style="opacity:0.6;">No text</em>'}
+            ${s.file_url
+                ? `<br><a href="${s.file_url}" target="_blank" rel="noopener"
+                      style="color:var(--primary);font-size:0.78rem;">📎 ${s.file_name || 'Attachment'}</a>`
+                : ''}
+        </div>
+        <div class="sub-time">${fmtDatetime(s.submitted_at)}</div>
+    </div>`).join('');
+}
+
+// ── Delete a note (teacher only) ─────────────────────────────
+async function deleteNote(noteId) {
+    if (!confirm('Delete this note/assignment? Learner submissions will also be deleted.')) return;
+    const res = await apiFetch(`/notes/${noteId}`, { method: 'DELETE' });
+    if (res.ok) {
+        allNotes = allNotes.filter(n => n.note_id !== noteId);
+        renderWorkspace();
+    } else {
+        alert('Failed to delete: ' + (res.data.error || 'Unknown error'));
+    }
+}
+
+// ── Create Modal ─────────────────────────────────────────────
+let currentNoteType = 'note';
+
+function openCreateModal() {
+    document.getElementById('create-modal').classList.add('active');
+    document.getElementById('note-title').value        = '';
+    document.getElementById('note-content').value      = '';
+    document.getElementById('note-file-url').value     = '';
+    document.getElementById('note-file-name').value    = '';
+    document.getElementById('note-available-from').value = '';
+    document.getElementById('note-due-at').value       = '';
+    document.getElementById('create-alert').innerHTML  = '';
+    setNoteType('note');
+}
+
+function closeCreateModal() {
+    document.getElementById('create-modal').classList.remove('active');
+}
+
+function setNoteType(type) {
+    currentNoteType = type;
+    document.getElementById('type-btn-note').classList.toggle('active',       type === 'note');
+    document.getElementById('type-btn-assignment').classList.toggle('active', type === 'assignment');
+    document.getElementById('assignment-fields').classList.toggle('visible',  type === 'assignment');
+    document.getElementById('create-modal-title').textContent =
+        type === 'note' ? '📝 New Note' : '📋 New Assignment';
+    document.getElementById('create-submit-btn').textContent =
+        type === 'note' ? 'Post Note' : 'Post Assignment';
+    document.getElementById('content-label').textContent =
+        type === 'note' ? 'Content' : 'Instructions';
+}
+
+async function submitCreateNote() {
+    const alertEl = document.getElementById('create-alert');
+    alertEl.innerHTML = '';
+
+    const title = document.getElementById('note-title').value.trim();
+    if (!title) {
+        showAlert(alertEl, 'Title is required.', 'error'); return;
+    }
+
+    const fileUrl = document.getElementById('note-file-url').value.trim();
+    if (fileUrl && !fileUrl.startsWith('https://')) {
+        showAlert(alertEl, 'Attachment URL must start with https://', 'error'); return;
+    }
+
+    const teacherId = me.id;
+    const learnerId = currentPair.personId;
+
+    const payload = {
+        teacher_id:     teacherId,
+        learner_id:     learnerId,
+        skill_id:       null,   // not required
+        note_type:      currentNoteType,
+        title,
+        content:        document.getElementById('note-content').value.trim(),
+        file_url:       fileUrl || null,
+        file_name:      document.getElementById('note-file-name').value.trim() || null,
+        available_from: document.getElementById('note-available-from').value || null,
+        due_at:         document.getElementById('note-due-at').value || null,
+    };
+
+    const btn = document.getElementById('create-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Posting…';
+
+    const res = await apiFetch('/notes', { method: 'POST', body: JSON.stringify(payload) });
+    btn.disabled = false;
+    btn.textContent = currentNoteType === 'note' ? 'Post Note' : 'Post Assignment';
+
+    if (res.ok) {
+        closeCreateModal();
+        // Refresh notes list
+        await openWorkspace(
+            currentPair.personId,
+            currentPair.personName,
+            currentPair.role,
+            currentPair.skillName
+        );
+    } else {
+        showAlert(alertEl, res.data.error || 'Failed to post', 'error');
+    }
+}
+
+// ── Submit Work Modal (learner) ───────────────────────────────
+function openSubmitModal(noteId, noteTitle) {
+    activeNoteId = noteId;
+    document.getElementById('submit-modal-assignment-title').textContent = noteTitle;
+    document.getElementById('sub-content').value   = '';
+    document.getElementById('sub-file-url').value  = '';
+    document.getElementById('sub-file-name').value = '';
+    document.getElementById('submit-alert').innerHTML = '';
+    document.getElementById('submit-modal').classList.add('active');
+}
+
+function closeSubmitModal() {
+    document.getElementById('submit-modal').classList.remove('active');
+    activeNoteId = null;
+}
+
+async function confirmSubmitWork() {
+    const alertEl = document.getElementById('submit-alert');
+    alertEl.innerHTML = '';
+
+    const content = document.getElementById('sub-content').value.trim();
+    const fileUrl = document.getElementById('sub-file-url').value.trim();
+
+    if (!content && !fileUrl) {
+        showAlert(alertEl, 'Please write an answer or provide a file URL.', 'error'); return;
+    }
+    if (fileUrl && !fileUrl.startsWith('https://')) {
+        showAlert(alertEl, 'File URL must start with https://', 'error'); return;
+    }
+
+    const payload = {
+        learner_id: me.id,
+        content,
+        file_url:   fileUrl || null,
+        file_name:  document.getElementById('sub-file-name').value.trim() || null,
+    };
+
+    const res = await apiFetch(`/notes/${activeNoteId}/submit`,
+        { method: 'POST', body: JSON.stringify(payload) });
+
+    if (res.ok) {
+        closeSubmitModal();
+        // Refresh
+        await openWorkspace(
+            currentPair.personId,
+            currentPair.personName,
+            currentPair.role,
+            currentPair.skillName
+        );
+    } else {
+        showAlert(alertEl, res.data.error || 'Submission failed', 'error');
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function fmtDatetime(str) {
+    if (!str) return '—';
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return d.toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+}
+
+// ── Run ───────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

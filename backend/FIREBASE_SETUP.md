@@ -47,8 +47,22 @@ It is already in `.gitignore`.
 
 1. Firebase Console → **Authentication** → **Settings** tab
 2. Under "Authorised domains" click **Add domain**
-3. Add: `localhost`
-4. (It may already be there by default)
+3. Add: `localhost` and `127.0.0.1`
+4. (localhost is usually there by default)
+
+## Step 4 — Email verification template
+
+1. Firebase Console → **Authentication** → **Templates** → **Email address verification**
+2. Confirm the action URL is the default:
+   `https://<project-id>.firebaseapp.com/__/auth/action`
+3. Set the Firebase **Public-facing name** to `SkillX`:
+   Project Settings → General → Public-facing name
+   (If the field is missing, open Authentication → Sign-in method → Google once —
+   Google is already used by this app — then return to Project Settings.)
+   This value fills `%APP_NAME%` in verification subjects. Names like
+   `project-929758621193` are often filtered into Gmail Spam/Promotions.
+4. Custom SMTP is optional. Do not enable it unless credentials are verified —
+   a broken SMTP config accepts `sendEmailVerification()` but never delivers mail.
 
 ---
 

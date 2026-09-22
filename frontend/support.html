@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help & Support - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/support.css?v=1.0">
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> SkillX
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="support-container">
+    <!-- Hero Header with Search -->
+    <div class="support-hero">
+        <h1>❓ How can we help you?</h1>
+        <p>Search our FAQ knowledge base or browse help topics below</p>
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="faq-search" placeholder="Type a question or keyword (e.g., Time Credits, requests, sessions)...">
+        </div>
+    </div>
+
+    <!-- Category Jump Cards -->
+    <div class="support-categories">
+        <div class="category-card active" data-category="all">
+            <div class="cat-icon">📋</div>
+            <h3>All Topics</h3>
+        </div>
+        <div class="category-card" data-category="getting-started">
+            <div class="cat-icon">🚀</div>
+            <h3>Getting Started</h3>
+        </div>
+        <div class="category-card" data-category="skills-matching">
+            <div class="cat-icon">⚡</div>
+            <h3>Skills & Matching</h3>
+        </div>
+        <div class="category-card" data-category="exchange-requests">
+            <div class="cat-icon">🔄</div>
+            <h3>Exchange Requests</h3>
+        </div>
+        <div class="category-card" data-category="time-sessions">
+            <div class="cat-icon">⏱️</div>
+            <h3>Time Credits & Sessions</h3>
+        </div>
+        <div class="category-card" data-category="account-profile">
+            <div class="cat-icon">👤</div>
+            <h3>Account & Profile</h3>
+        </div>
+        <div class="category-card" data-category="common-problems">
+            <div class="cat-icon">⚠️</div>
+            <h3>Common Problems</h3>
+        </div>
+    </div>
+
+    <!-- FAQ Accordions -->
+    <div class="faq-section-title">❓ Frequently Asked Questions</div>
+
+    <!-- Group 1: Getting Started -->
+    <div class="faq-group" data-category="getting-started">
+        <div class="faq-group-header">🚀 Getting Started</div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How does SkillX work?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                SkillX is a peer-to-peer student skill exchange platform. You list skills you can teach and skills you want to learn. Our Smart Matching engine pairs you with peers for mutually beneficial skill exchanges!
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do I offer or request a skill?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Go to the <strong>⚡ My Skills</strong> page from the navbar. Under "Add a Skill", select a skill from our catalogue, choose whether you want to <em>Teach</em> or <em>Learn</em> it, and click Add.
+            </div>
+        </div>
+    </div>
+
+    <!-- Group 2: Skills & Matching -->
+    <div class="faq-group" data-category="skills-matching">
+        <div class="faq-group-header">⚡ Skills & Matching</div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do Smart Matches work?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Our algorithm finds direct 2-way matches where a student teaches what you want to learn AND wants to learn what you teach. It also finds 1-way complementary matches to ensure you always find learning partners.
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>Can I teach multiple skills at once?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Yes! You can add as many teaching and learning skills to your catalogue as you like. Having more skills listed increases your Smart Match recommendations.
+            </div>
+        </div>
+    </div>
+
+    <!-- Group 3: Exchange Requests -->
+    <div class="faq-group" data-category="exchange-requests">
+        <div class="faq-group-header">🔄 Exchange Requests</div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do I send an exchange request?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Search for students on the <strong>🔍 Search</strong> or Dashboard page and click <strong>Send Request</strong>. You can attach an optional note proposing a topic or schedule.
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>What happens when my request is accepted?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Once a request is accepted, a direct chat channel opens in <strong>💬 Messages</strong>, allowing you to converse, share files, and schedule 1-on-1 learning sessions!
+            </div>
+        </div>
+    </div>
+
+    <!-- Group 4: Time Credits & Sessions -->
+    <div class="faq-group" data-category="time-sessions">
+        <div class="faq-group-header">⏱️ Time Credits & Sessions</div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do Time Credits work?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Every new student starts with 5 free Time Credits. When you teach a peer in a confirmed session, you earn 1 credit. When you learn from a peer, 1 credit is transferred.
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do I schedule a learning session?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Open a chat with your partner in <strong>💬 Messages</strong> and click the <strong>📅 Schedule Session</strong> icon in the header. Choose date, time, duration, and topic.
+            </div>
+        </div>
+    </div>
+
+    <!-- Group 5: Account & Profile -->
+    <div class="faq-group" data-category="account-profile">
+        <div class="faq-group-header">👤 Account & Profile</div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do I update my profile picture or avatar?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Navigate to <strong>👤 Profile</strong> from the top navbar. Click "Upload Photo" or choose an avatar emoji to customize your display picture across SkillX.
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>How do I change my theme or notification preferences?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Click your name in the top navbar and select <strong>⚙️ Settings</strong>. There you can switch between Light/Dark themes, adjust notification toggles, and set privacy rules.
+            </div>
+        </div>
+    </div>
+
+    <!-- Group 6: Common Problems -->
+    <div class="faq-group" data-category="common-problems">
+        <div class="faq-group-header">⚠️ Common Problems</div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>What if my exchange partner doesn't show up?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                If a partner fails to attend a scheduled session, you can cancel or reschedule the session from your chat dashboard. Unconfirmed sessions do not deduct Time Credits.
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <span>Why am I not receiving notifications?</span>
+                <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+                Ensure notification toggles are enabled in <strong>⚙️ Settings -> Notifications</strong>. Check that your browser permissions allow popups/notifications for SkillX.
+            </div>
+        </div>
+    </div>
+
+    <!-- Still Need Help Form -->
+    <div class="support-form-card">
+        <h2>📩 Still need help?</h2>
+        <p>If you couldn't find an answer to your question, send our support team a message below.</p>
+
+        <div id="support-form-alert"></div>
+
+        <form onsubmit="handleSubmitSupport(event)">
+            <div class="form-group">
+                <label for="support-category">Category</label>
+                <select id="support-category" class="form-control" required>
+                    <option value="">Select issue category...</option>
+                    <option value="Getting Started">🚀 Getting Started</option>
+                    <option value="Skills & Matching">⚡ Skills & Matching</option>
+                    <option value="Exchange Requests">🔄 Exchange Requests</option>
+                    <option value="Time Credits & Sessions">⏱️ Time Credits & Sessions</option>
+                    <option value="Account & Profile">👤 Account & Profile</option>
+                    <option value="Common Problems">⚠️ Common Problems</option>
+                    <option value="Other">💬 Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="support-description">Problem Description</label>
+                <textarea id="support-description" class="form-control" rows="4" required placeholder="Describe your issue or question in detail..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit Support Request</button>
+        </form>
+    </div>
+
+    <!-- Submitted Support Tickets List -->
+    <div class="tickets-card" id="my-tickets-card" style="display:none;">
+        <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-dark); margin-bottom:14px;">🎫 My Support Tickets</h2>
+        <div id="tickets-list"></div>
+    </div>
+</div>
+
+<!-- Ticket Details Modal -->
+<div class="modal-overlay" id="ticket-details-modal">
+    <div class="modal-box" style="max-width: 520px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <h3 style="margin:0; font-size:1.15rem; color:var(--text-dark);" id="modal-ticket-title">Ticket Details</h3>
+            <span id="modal-ticket-status-badge"></span>
+        </div>
+        <div class="modal-body">
+            <div class="ticket-detail-field">
+                <label>Category</label>
+                <div class="ticket-detail-value" id="modal-ticket-category">-</div>
+            </div>
+            <div class="ticket-detail-field">
+                <label>Submitted On</label>
+                <div class="ticket-detail-value" id="modal-ticket-date">-</div>
+            </div>
+            <div class="ticket-detail-field">
+                <label>Problem Description</label>
+                <div class="ticket-desc-box" id="modal-ticket-description">-</div>
+            </div>
+            <div class="ticket-detail-field">
+                <label>Support Team Response</label>
+                <div id="modal-ticket-admin-reply" class="admin-reply-box">No response from support team yet. Our team will review your ticket soon.</div>
+            </div>
+        </div>
+        <div class="modal-actions" style="margin-top:20px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="closeTicketDetailsModal()">Close</button>
+        </div>
+    </div>
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
+<script src="js/support.js?v=1.0"></script>
+</body>
+</html>

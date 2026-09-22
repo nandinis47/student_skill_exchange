@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <style>
+        .terms-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 28px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .terms-card h2 {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .terms-card p {
+            color: var(--text-muted);
+            font-size: 0.925rem;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .terms-card ul {
+            margin-left: 20px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .terms-card ul li {
+            margin-bottom: 6px;
+        }
+
+        .terms-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .last-updated {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        html.dark-mode .terms-card,
+        body.dark-mode .terms-card {
+            background: #1e1e2e;
+            border-color: #2d2d44;
+        }
+
+        html.dark-mode .terms-card h2,
+        body.dark-mode .terms-card h2 {
+            color: #e8e8ff;
+        }
+
+        html.dark-mode .terms-card p,
+        body.dark-mode .terms-card p,
+        html.dark-mode .terms-card ul,
+        body.dark-mode .terms-card ul {
+            color: #9999bb;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> SkillX
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>📜 Terms of Service</h1>
+        <p>Please review the community guidelines and terms governing your use of SkillX.</p>
+        <span class="last-updated">Effective Date: September 2026</span>
+    </div>
+
+    <!-- 1. User Responsibilities -->
+    <div class="terms-card">
+        <h2>👤 1. User Responsibilities</h2>
+        <p>By registering and using SkillX, you agree to fulfill the following obligations:</p>
+        <ul>
+            <li><strong>Accurate Information:</strong> Provide truthful information during registration, including your name, email, department, and academic year.</li>
+            <li><strong>Account Security:</strong> Keep your login credentials safe and confidential. You are responsible for all activities conducted under your account.</li>
+            <li><strong>Respectful Conduct:</strong> Communicate politely and respectfully with fellow students across all chats, sessions, and platform interactions.</li>
+        </ul>
+    </div>
+
+    <!-- 2. Skill Exchange Rules -->
+    <div class="terms-card">
+        <h2>🤝 2. Skill Exchange Rules</h2>
+        <p>SkillX is designed for peer-to-peer knowledge sharing and collaborative learning:</p>
+        <ul>
+            <li><strong>Authentic Expertise:</strong> Only list skills under "Can Teach" that you possess reasonable knowledge of and are prepared to share.</li>
+            <li><strong>Punctuality & Commitment:</strong> Attend scheduled learning sessions on time and fulfill exchange agreements in good faith.</li>
+            <li><strong>Educational Focus:</strong> Sessions must remain focused on educational, academic, creative, or technical skill development.</li>
+        </ul>
+    </div>
+
+    <!-- 3. Time Credits & Sessions -->
+    <div class="terms-card">
+        <h2>⏱️ 3. Time Credits & Sessions</h2>
+        <p>Our platform uses a Time Credit system to reward active peer teachers:</p>
+        <ul>
+            <li><strong>Earning & Spending:</strong> Completing teaching sessions awards Time Credits that can be used to book learning sessions with other students.</li>
+            <li><strong>No Monetary Value:</strong> Time Credits are internal platform utilities, hold zero cash value, and cannot be redeemed for real currency.</li>
+            <li><strong>Cancellations:</strong> If you cannot attend a scheduled session, notify your partner as early as possible or cancel through the session menu.</li>
+        </ul>
+    </div>
+
+    <!-- 4. Prohibited Activities -->
+    <div class="terms-card">
+        <h2>🚫 4. Prohibited Activities</h2>
+        <p>To ensure a safe environment for all students, the following actions are strictly forbidden:</p>
+        <ul>
+            <li>Harassment, hate speech, bullying, discrimination, or abusive behavior toward any user.</li>
+            <li>Academic dishonesty, including offering to take exams or write assignments for others for pay.</li>
+            <li>Spamming, commercial advertising, selling products, or soliciting funds off-platform.</li>
+            <li>Attempting to hack, scrape, reverse-engineer, or disrupt SkillX services and databases.</li>
+        </ul>
+    </div>
+
+    <!-- 5. Account Suspension & Termination -->
+    <div class="terms-card">
+        <h2>⚠️ 5. Account Suspension & Termination</h2>
+        <p>We reserve the right to enforce community standards and protect our user base:</p>
+        <ul>
+            <li>Accounts reported or detected engaging in prohibited activities may face temporary suspension or permanent termination.</li>
+            <li>You may close your account at any time by navigating to <strong>Settings -> Privacy -> Delete Account</strong>.</li>
+        </ul>
+    </div>
+
+    <!-- 6. Limitation of Liability -->
+    <div class="terms-card">
+        <h2>🛡️ 6. Limitation of Liability</h2>
+        <p>SkillX provides a platform for peer networking and student skill exchange:</p>
+        <ul>
+            <li>We do not guarantee specific academic performance, grades, or external certifications as a result of skill exchanges.</li>
+            <li>SkillX is not liable for indirect damages, personal disputes between users, or third-party links shared during study sessions.</li>
+        </ul>
+    </div>
+
+    <!-- 7. Changes to Terms -->
+    <div class="terms-card">
+        <h2>📝 7. Changes to Terms</h2>
+        <p>We may update these Terms of Service periodically to support new features or platform policies:</p>
+        <ul>
+            <li>Material updates will be reflected on this page with a revised "Effective Date".</li>
+            <li>Continued use of SkillX after policy updates signifies your agreement to the revised Terms.</li>
+        </ul>
+    </div>
+</div>
+
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
+<script>
+    renderNavUser();
+</script>
+</body>
+</html>

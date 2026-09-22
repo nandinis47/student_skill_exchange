@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - SkillX</title>
-    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <link rel="stylesheet" href="css/style.css?v=2.3">
     <link rel="stylesheet" href="css/dashboard.css?v=2.0">
 </head>
 <body>
@@ -21,9 +21,20 @@
         <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
     </ul>
     <div class="navbar-user">
-        <div class="user-avatar" id="nav-avatar" onclick="location.href='profile.html'">?</div>
-        <span id="nav-user-name"></span>
-        <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
     </div>
 </nav>
 
@@ -57,14 +68,14 @@
         <div class="focus-goal" id="focus-goal">Loading...</div>
         <div class="focus-meta" id="focus-meta"></div>
         <div class="focus-actions">
-            <button class="btn btn-primary btn-sm" onclick="markFocusDone()">✅ Done for Today</button>
+            <button class="btn btn-primary btn-sm" id="focus-done-btn" onclick="markFocusDone()">✅ Done for Today</button>
             <a href="skills.html" class="btn btn-secondary btn-sm">📚 Add Skills</a>
         </div>
     </div>
 </div>
 
 <!-- ── ROW 2: STATS ── -->
-<div class="grid-4 stats-row">
+<div class="grid-4 stats-row" style="grid-template-columns:repeat(5,1fr);">
     <div class="stat-card"><div class="stat-icon blue">👥</div>
         <div class="stat-info"><h3 id="stat-students">-</h3><p>Total Students</p></div></div>
     <div class="stat-card"><div class="stat-icon green">⚡</div>
@@ -73,6 +84,8 @@
         <div class="stat-info"><h3 id="stat-exchanges">-</h3><p>My Exchanges</p></div></div>
     <div class="stat-card"><div class="stat-icon red">⏱️</div>
         <div class="stat-info"><h3 id="stat-hours">-</h3><p>Hours Learned</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#f3e8fd;color:#7b1fa2;">⏰</div>
+        <div class="stat-info"><h3 id="stat-credits">-</h3><p>Time Credits</p></div></div>
 </div>
 
 <!-- ── ROW 3: SKILL JOURNEY ── -->
@@ -212,6 +225,9 @@
   </div>
 </div>
 
+<!-- Notes FAB — opens Notes & Work page -->
+<a href="notes.html" class="notes-fab" title="Notes & Work">📝</a>
+
 <!-- Floating SkillBot -->
 <div class="skillbot-fab" id="skillbot-fab" onclick="toggleSkillBot()">🤖</div>
 <div class="skillbot-panel" id="skillbot-panel">
@@ -228,7 +244,43 @@
     </div>
 </div>
 
-<script src="js/api.js?v=2.0"></script>
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
 <script src="js/dashboard.js?v=2.0"></script>
 </body>
 </html>

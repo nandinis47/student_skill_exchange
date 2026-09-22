@@ -62,7 +62,7 @@ print("  ✅ Application is running!")
 print("=" * 60)
 print("\n  Frontend:  http://localhost:8080")
 print("  Backend:   http://localhost:5000")
-print("\n  Login with:  aarav@college.edu / pass123")
+print("\n  Register a new account or log in to get started.")
 print("\n  Press Ctrl+C to stop both servers")
 print("=" * 60)
 

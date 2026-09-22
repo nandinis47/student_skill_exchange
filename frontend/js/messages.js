@@ -7,6 +7,7 @@ const student = getCurrentStudent();
 let currentChatId   = null, currentChatName = '';
 let currentGroupId  = null, currentGroupName = '';
 let allStudents = [], conversations = {};
+let connectedIds = new Set();   // IDs of students with whom we have an accepted request
 let pollTimer = null, typingTimer = null;
 let lastMsgCount = 0, lastGrpMsgCount = 0;
 let replyTo = null;
@@ -43,10 +44,19 @@ async function init() {
     const res = await Students.getAll();
     if (res.ok) {
         allStudents = res.data.filter(s => s.id !== student.id);
+
+        // Load accepted connections so we can gate the New Chat dropdown
+        await loadConnectedIds();
+
         const sel = document.getElementById('new-chat-select');
+        // Only show connected students in New Chat dropdown
+        const connected = allStudents.filter(s => connectedIds.has(s.id));
         sel.innerHTML = '<option value="">Choose…</option>' +
-            allStudents.map(s=>`<option value="${s.id}" data-name="${s.name}">${s.name} (${s.department||''})</option>`).join('');
-        // Build group member checkboxes
+            connected.map(s=>`<option value="${s.id}" data-name="${s.name}">${s.name} (${s.department||''})</option>`).join('');
+        if (!connected.length) {
+            sel.innerHTML = '<option value="">No connections yet — send exchange requests first</option>';
+        }
+        // Build group member checkboxes (still all students — groups are separate)
         renderMemberCheckboxes();
     }
 
@@ -62,6 +72,26 @@ async function init() {
 
     buildEmojiUI(); buildStickerUI();
     document.addEventListener('click', handleOutsideClick);
+}
+
+// ── Connection guard ──────────────────────────────────────────
+// Populates connectedIds with student IDs where an exchange_request
+// with status='accepted' exists in either direction.
+async function loadConnectedIds() {
+    const res = await Requests.getForStudent(student.id);
+    if (!res.ok) return;
+    connectedIds = new Set();
+    res.data.forEach(r => {
+        if (r.status === 'accepted') {
+            // Add the OTHER person in the request
+            const otherId = r.sender_id === student.id ? r.receiver_id : r.sender_id;
+            connectedIds.add(otherId);
+        }
+    });
+}
+
+function isConnected(otherId) {
+    return connectedIds.has(otherId);
 }
 
 async function poll() {
@@ -189,6 +219,15 @@ function filterContacts() {
 
 // ── Open Chat / Group ─────────────────────────────────────────
 async function openChat(otherId, otherName) {
+    // ── Connection guard ──────────────────────────────────────
+    // Only allow messaging people with an accepted exchange request.
+    // For existing conversations (already in sidebar), allow — they
+    // connected previously and may still have messages.
+    // For fresh opens (e.g. ?to= deep-link or New Chat), enforce the check.
+    if (!isConnected(otherId) && !conversations[otherId]) {
+        openConnectModal(otherId, otherName);
+        return;
+    }
     currentChatId=otherId; currentChatName=otherName;
     currentGroupId=null; replyTo=null;
     document.getElementById('no-chat').style.display='none';
@@ -1343,3 +1382,107 @@ window.addEventListener('DOMContentLoaded', () => {
 setInterval(() => {
     if (typeof loadNotifBadge === 'function') loadNotifBadge();
 }, 30000);
+
+// ============================================================
+//  CONNECTION GUARD — Connect modal for non-connected users
+// ============================================================
+
+let connectTargetId   = null;
+let connectTargetName = '';
+
+/**
+ * Show the Connect modal instead of opening a chat when the
+ * target user has no accepted exchange request with the current user.
+ */
+function openConnectModal(otherId, otherName) {
+    connectTargetId   = otherId;
+    connectTargetName = otherName;
+    document.getElementById('connect-modal-desc').textContent =
+        `You are not yet connected with ${otherName}. Send a connection request to start messaging.`;
+    document.getElementById('connect-note').value    = '';
+    document.getElementById('connect-alert').innerHTML = '';
+    const btn = document.getElementById('connect-send-btn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Request →'; }
+    document.getElementById('connect-modal').classList.add('active');
+}
+
+async function sendConnectRequest() {
+    const alertEl = document.getElementById('connect-alert');
+    const note    = document.getElementById('connect-note').value.trim();
+    const btn     = document.getElementById('connect-send-btn');
+
+    // Note is required
+    if (!note) {
+        showAlert(alertEl, 'Please write a short note explaining why you want to connect.', 'error');
+        document.getElementById('connect-note').focus();
+        return;
+    }
+
+    // Check if a pending request already exists
+    const reqRes = await Requests.getForStudent(student.id);
+    if (reqRes.ok) {
+        const existing = reqRes.data.find(r =>
+            (r.sender_id === student.id   && r.receiver_id === connectTargetId) ||
+            (r.receiver_id === student.id && r.sender_id === connectTargetId)
+        );
+        if (existing) {
+            if (existing.status === 'pending') {
+                showAlert(alertEl,
+                    `A connection request to ${connectTargetName} is already pending. Wait for them to accept.`,
+                    'info');
+                return;
+            }
+            if (existing.status === 'accepted') {
+                // They became connected while the modal was open — reload and open chat
+                await loadConnectedIds();
+                closeModal('connect-modal');
+                openChat(connectTargetId, connectTargetName);
+                return;
+            }
+            // rejected — allow re-sending (fall through)
+        }
+    }
+
+    // Find any skill to attach the request to (use the first skill either person teaches)
+    // The exchange_requests table requires a skill_id — use the first match or a placeholder.
+    let skillId = null;
+    const targetStudent = allStudents.find(s => s.id === connectTargetId);
+    if (targetStudent && targetStudent.teaches) {
+        // teaches is a comma-separated string from GET /students
+        const skillsRes = await apiFetch('/skills');
+        if (skillsRes.ok) {
+            const teachNames = targetStudent.teaches.split(',').map(t => t.trim());
+            const matched = skillsRes.data.find(sk => teachNames.includes(sk.skill_name));
+            if (matched) skillId = matched.skill_id;
+        }
+    }
+    // Fallback: use first available skill
+    if (!skillId) {
+        const skillsRes = await apiFetch('/skills');
+        if (skillsRes.ok && skillsRes.data.length) skillId = skillsRes.data[0].skill_id;
+    }
+
+    if (!skillId) {
+        showAlert(alertEl, 'No skills available to attach to the request. Add skills first.', 'error');
+        return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Sending…';
+
+    const res = await Requests.send(student.id, connectTargetId, skillId, note);
+
+    btn.disabled    = false;
+    btn.textContent = 'Send Request →';
+
+    if (res.ok) {
+        showAlert(alertEl,
+            `Request sent to ${connectTargetName}! You can message them once they accept.`,
+            'success');
+        // Disable button to prevent re-sending
+        btn.disabled    = true;
+        btn.textContent = '✓ Request Sent';
+    } else {
+        showAlert(alertEl, res.data?.error || 'Failed to send request. Please try again.', 'error');
+    }
+}

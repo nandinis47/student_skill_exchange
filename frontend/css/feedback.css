@@ -1,0 +1,192 @@
+/* ============================================
+   Give Feedback Page Styles - SkillX
+   ============================================ */
+
+.feedback-container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 20px 60px 20px;
+}
+
+.feedback-header {
+    margin-bottom: 24px;
+}
+
+.feedback-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.feedback-header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-top: 4px;
+}
+
+.feedback-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+}
+
+.feedback-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Interactive Star Rating Widget */
+.star-rating-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.star-rating {
+    display: flex;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.star {
+    font-size: 2rem;
+    color: #dadce0;
+    transition: color 0.15s, transform 0.15s;
+    user-select: none;
+}
+
+.star:hover,
+.star.hovered,
+.star.selected {
+    color: #fbbc04;
+    transform: scale(1.15);
+}
+
+.rating-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-left: 8px;
+}
+
+/* Checkbox Label */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* Previous Feedback Section */
+.history-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.feedback-item {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    margin-bottom: 14px;
+}
+
+.feedback-item:last-child {
+    margin-bottom: 0;
+}
+
+.feedback-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.feedback-item-cat {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.feedback-item-stars {
+    color: #fbbc04;
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+.feedback-item-msg {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+}
+
+.feedback-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.contact-badge {
+    font-size: 0.75rem;
+    background: #e8f0fe;
+    color: #1a73e8;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* Dark Mode Overrides */
+.dark-mode .feedback-card,
+.dark-mode .history-card {
+    background: #1e1e2e;
+    border-color: #2d2d44;
+}
+
+.dark-mode .feedback-item {
+    background: #151522;
+    border-color: #2d2d44;
+}
+
+.dark-mode .star {
+    color: #3a3a5c;
+}
+
+.dark-mode .star:hover,
+.dark-mode .star.hovered,
+.dark-mode .star.selected {
+    color: #fbbc04;
+}
+
+.dark-mode .contact-badge {
+    background: #252840;
+    color: #64b5f6;
+}

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - SkillX</title>
+    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <style>
+        .privacy-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 28px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .privacy-card h2 {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .privacy-card p {
+            color: var(--text-muted);
+            font-size: 0.925rem;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .privacy-card ul {
+            margin-left: 20px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .privacy-card ul li {
+            margin-bottom: 6px;
+        }
+
+        .privacy-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .last-updated {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        html.dark-mode .privacy-card,
+        body.dark-mode .privacy-card {
+            background: #1e1e2e;
+            border-color: #2d2d44;
+        }
+
+        html.dark-mode .privacy-card h2,
+        body.dark-mode .privacy-card h2 {
+            color: #e8e8ff;
+        }
+
+        html.dark-mode .privacy-card p,
+        body.dark-mode .privacy-card p,
+        html.dark-mode .privacy-card ul,
+        body.dark-mode .privacy-card ul {
+            color: #9999bb;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="dashboard.html" class="navbar-brand">
+        <div class="logo-icon">🎓</div> SkillX
+    </a>
+    <ul class="navbar-nav">
+        <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
+        <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
+        <li><a href="search.html"    data-page="search">🔍 Search</a></li>
+        <li><a href="requests.html"  data-page="requests">🔄 Requests</a></li>
+        <li><a href="messages.html"  data-page="messages">💬 Messages</a></li>
+        <li><a href="profile.html"   data-page="profile">👤 Profile</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div class="user-dropdown">
+            <button type="button" class="user-dropdown-btn" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+                <div class="user-avatar" id="nav-avatar">?</div>
+                <span id="nav-user-name" class="nav-user-name-text"></span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="user-dropdown-menu" id="user-dropdown-menu">
+                <a href="settings.html"><span class="icon">⚙️</span> Settings</a>
+                <a href="support.html"><span class="icon">❓</span> Help & Support</a>
+                <a href="feedback.html"><span class="icon">💬</span> Give Feedback</a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="logout-item" onclick="Auth.logout()"><span class="icon">🚪</span> Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>🔒 Privacy Policy</h1>
+        <p>Learn how SkillX collects, uses, protects, and manages your personal data.</p>
+        <span class="last-updated">Last Updated: September 2026</span>
+    </div>
+
+    <!-- 1. Information Collected -->
+    <div class="privacy-card">
+        <h2>📌 1. Information Collected</h2>
+        <p>We collect essential information required to connect students for peer-to-peer skill exchanges and maintain a safe community platform:</p>
+        <ul>
+            <li><strong>Account Details:</strong> Full name, email address, department, academic year, and profile picture or avatar emoji.</li>
+            <li><strong>Skills & Interests:</strong> Skills you offer to teach and skills you wish to learn.</li>
+            <li><strong>Platform Activity:</strong> Exchange requests, chat messages, shared notes, session schedules, and support/feedback inquiries.</li>
+        </ul>
+    </div>
+
+    <!-- 2. How Data is Used -->
+    <div class="privacy-card">
+        <h2>🚀 2. How Data is Used</h2>
+        <p>Your information is used solely to power SkillX features and improve your learning experience:</p>
+        <ul>
+            <li>Matching you with relevant student teachers and peer learners.</li>
+            <li>Managing time credits, scheduling sessions, and facilitating real-time messaging.</li>
+            <li>Maintaining account security, preventing abuse, and providing customer support.</li>
+            <li>Enhancing platform performance and user interface experience.</li>
+        </ul>
+    </div>
+
+    <!-- 3. Data Storage & Security -->
+    <div class="privacy-card">
+        <h2>🛡️ 3. Data Storage & Security</h2>
+        <p>We take data protection seriously and implement robust technical measures to safeguard your information:</p>
+        <ul>
+            <li>All passwords are hashed using industry-standard secure cryptography algorithms.</li>
+            <li>Data transfers between your browser and our servers are encrypted via HTTPS protocols.</li>
+            <li>Database access is strictly restricted to authorized system services.</li>
+        </ul>
+    </div>
+
+    <!-- 4. User Control and Account Deletion -->
+    <div class="privacy-card">
+        <h2>⚙️ 4. User Control & Account Deletion</h2>
+        <p>You maintain full control over your personal information on SkillX:</p>
+        <ul>
+            <li><strong>Profile Customization:</strong> Update your bio, skills, profile picture, or avatar anytime via <strong>👤 Profile</strong>.</li>
+            <li><strong>Account Settings:</strong> Change your email, password, theme preferences, and notifications under <strong>⚙️ Settings</strong>.</li>
+            <li><strong>Account Deletion:</strong> Permanently erase your account and all associated data anytime under <strong>Settings -> Privacy -> Delete Account</strong>.</li>
+        </ul>
+    </div>
+
+    <!-- 5. Cookies and Local Storage -->
+    <div class="privacy-card">
+        <h2>🍪 5. Cookies & Local Storage</h2>
+        <p>SkillX uses browser local storage strictly for essential platform functionality:</p>
+        <ul>
+            <li>Maintaining active login session state so you stay signed in safely.</li>
+            <li>Saving your visual appearance preference (Light Theme, Dark Theme, or System Default).</li>
+            <li>We <strong>do not</strong> use third-party tracking cookies or targeted advertising cookies.</li>
+        </ul>
+    </div>
+
+    <!-- 6. Third-Party Services -->
+    <div class="privacy-card">
+        <h2>🔗 6. Third-Party Services</h2>
+        <p>SkillX is a student-focused learning platform. We respect your privacy:</p>
+        <ul>
+            <li>We <strong>never</strong> sell, trade, or rent your personal data to advertisers or third parties.</li>
+            <li>Integrations with external resources (such as optional links or attachment URLs shared by users) are governed by their respective privacy terms.</li>
+        </ul>
+    </div>
+
+    <!-- 7. Contact Information -->
+    <div class="privacy-card">
+        <h2>📩 7. Contact Information</h2>
+        <p>If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us through:</p>
+        <ul>
+            <li><strong>Help & Support Center:</strong> Visit <a href="support.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Help & Support</a> to submit a query.</li>
+            <li><strong>Feedback:</strong> Share your thoughts via <a href="feedback.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Give Feedback</a>.</li>
+            <li><strong>Email Support:</strong> Contact our team at <a href="mailto:privacy@skillx.edu" style="color:var(--primary);text-decoration:none;font-weight:600;">privacy@skillx.edu</a>.</li>
+        </ul>
+    </div>
+</div>
+
+<footer class="app-footer">
+    <div class="footer-container">
+        <div class="footer-links">
+            <a href="dashboard.html" class="footer-brand">SkillX</a>
+            <span class="footer-sep">|</span>
+            <a href="dashboard.html">Dashboard</a>
+            <span class="footer-sep">|</span>
+            <a href="skills.html">My Skills</a>
+            <span class="footer-sep">|</span>
+            <a href="search.html">Search</a>
+            <span class="footer-sep">|</span>
+            <a href="requests.html">Requests</a>
+            <span class="footer-sep">|</span>
+            <a href="messages.html">Messages</a>
+            <span class="footer-sep">|</span>
+            <a href="support.html">Help & Support</a>
+            <span class="footer-sep">|</span>
+            <a href="feedback.html">Give Feedback</a>
+            <span class="footer-sep">|</span>
+            <a href="privacy.html">Privacy Policy</a>
+            <span class="footer-sep">|</span>
+            <a href="terms.html">Terms</a>
+        </div>
+        <p class="footer-tagline" aria-label="Connect, Learn, Teach, Grow">
+            <span class="ft-chip ft-connect">Connect <span class="ft-ico" aria-hidden="true">👥</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-learn">Learn <span class="ft-ico" aria-hidden="true">💡</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-teach">Teach <span class="ft-ico" aria-hidden="true">🎓</span></span>
+            <span class="ft-dot">•</span>
+            <span class="ft-chip ft-grow">Grow <span class="ft-ico" aria-hidden="true">🌱</span></span>
+        </p>
+        <p class="footer-copy">&copy; 2026 SkillX. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="js/api.js?v=2.1"></script>
+<script>
+    renderNavUser();
+</script>
+</body>
+</html>
