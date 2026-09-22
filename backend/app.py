@@ -418,6 +418,42 @@ def get_skills_by_domain(domain_id):
 
 import base64, uuid, os, json as json_lib
 
+def validate_https_url(url):
+    """
+    Returns (True, cleaned_url) or (False, error_message).
+    - Auto-upgrades http:// → https://
+    - Auto-prepends https:// to bare domains like example.com
+    - Rejects ftp://, javascript:, and truly malformed strings
+    """
+    if not url:
+        return True, url
+    url = url.strip()
+
+    # Block dangerous schemes explicitly first
+    lower = url.lower()
+    for bad in ('javascript:', 'data:', 'vbscript:', 'ftp://', 'file://'):
+        if lower.startswith(bad):
+            return False, f'"{bad}" URLs are not allowed. Only https:// is accepted.'
+
+    # Auto-upgrade http → https
+    if url.startswith('http://'):
+        url = 'https://' + url[7:]
+
+    # Auto-prepend https:// to bare domains (e.g. "example.com")
+    if not url.startswith('https://'):
+        url = 'https://' + url
+
+    # Final parse check
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(url)
+        if p.scheme != 'https' or not p.netloc or '.' not in p.netloc:
+            raise ValueError
+        return True, url
+    except Exception:
+        return False, 'Invalid URL. Use a full address like https://example.com'
+
+
 # ============================================
 # GROUPS API
 # ============================================
@@ -903,18 +939,27 @@ def get_leaderboard():
 
 @app.route('/api/messages', methods=['POST'])
 def send_message_v2():
-    # Handle both old simple messages and new rich messages
     data = request.json
     conn = get_db()
     cursor = conn.cursor()
+
+    msg_type = data.get('message_type', 'text')
+    file_url  = data.get('file_url')
+
+    # Validate https:// for link and shared-url messages
+    if msg_type == 'link' and file_url:
+        ok, result = validate_https_url(file_url)
+        if not ok:
+            return jsonify({'error': result}), 422
+        file_url = result   # use upgraded/cleaned URL
+
     cursor.execute("""
         INSERT INTO messages
             (sender_id, receiver_id, message, message_type, file_url, file_name)
         VALUES (%s, %s, %s, %s, %s, %s)
     """, (
         data['sender_id'], data['receiver_id'], data.get('message',''),
-        data.get('message_type','text'),
-        data.get('file_url'), data.get('file_name')
+        msg_type, file_url, data.get('file_name')
     ))
     conn.commit()
     msg_id = cursor.lastrowid
@@ -1019,6 +1064,16 @@ def share_content():
     data = request.json
     conn = get_db()
     cursor = conn.cursor()
+
+    # Validate https:// for any provided URL
+    file_url = data.get('file_url')
+    if file_url:
+        ok, result = validate_https_url(file_url)
+        if not ok:
+            cursor.close(); conn.close()
+            return jsonify({'error': f'Invalid URL: {result}'}), 422
+        file_url = result  # store upgraded/cleaned URL
+
     try:
         cursor.execute("""
             INSERT INTO shared_content
@@ -1028,7 +1083,7 @@ def share_content():
         """, (
             data['sender_id'], data['receiver_id'], data['title'],
             data['content_type'], data.get('media_type'),
-            data.get('file_url'), data.get('file_name'),
+            file_url, data.get('file_name'),
             data.get('file_size'), data.get('description','')
         ))
         conn.commit()
@@ -1132,6 +1187,28 @@ def get_student_full(student_id):
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
+
+@app.route('/api/voice-upload', methods=['POST'])
+def upload_voice():
+    """Receive base64 audio, save to uploads/, return URL."""
+    data = request.json
+    b64  = data.get('audio_b64', '')
+    if not b64:
+        return jsonify({'error': 'No audio data'}), 400
+    # Strip data URL header  e.g. "data:audio/webm;base64,..."
+    if ',' in b64:
+        b64 = b64.split(',', 1)[1]
+    try:
+        audio_bytes = base64.b64decode(b64)
+        fname = f"voice_{uuid.uuid4().hex[:12]}.webm"
+        fpath = os.path.join(UPLOAD_DIR, fname)
+        with open(fpath, 'wb') as f:
+            f.write(audio_bytes)
+        url = f'http://localhost:5000/uploads/{fname}'
+        return jsonify({'url': url}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # ============================================

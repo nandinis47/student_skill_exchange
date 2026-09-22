@@ -342,10 +342,27 @@ async function sendMsg() {
     const text=input.value.trim(); if (!text||!currentChatId) return;
     input.value='';
     const isUrl=/^https?:\/\/\S+$/.test(text);
-    const payload={sender_id:student.id,receiver_id:currentChatId,message:text,
-        message_type:isUrl?'link':'text',file_url:isUrl?text:null,
-        reply_to_id:replyTo?replyTo.message_id:null};
-    await apiFetch('/messages',{method:'POST',body:JSON.stringify(payload)});
+
+    // Validate https:// for link messages
+    if (isUrl) {
+        const check = validateAndNormalizeUrl(text);
+        if (!check.valid) {
+            input.value = text;   // put it back
+            showToast('⚠️ ' + check.error);
+            return;
+        }
+        // Use the normalised (https) URL
+        const safeUrl = check.url;
+        const payload={sender_id:student.id,receiver_id:currentChatId,
+            message: safeUrl, message_type:'link', file_url: safeUrl,
+            reply_to_id:replyTo?replyTo.message_id:null};
+        await apiFetch('/messages',{method:'POST',body:JSON.stringify(payload)});
+    } else {
+        const payload={sender_id:student.id,receiver_id:currentChatId,message:text,
+            message_type:'text', file_url:null,
+            reply_to_id:replyTo?replyTo.message_id:null};
+        await apiFetch('/messages',{method:'POST',body:JSON.stringify(payload)});
+    }
     clearReply(); clearTyping();
     await loadMessages(); await loadConversations(true);
 }
@@ -752,7 +769,102 @@ init();
 //  Dark Mode, Notifications, Pin/Mute/Archive/Block, Search
 // ============================================================
 
-// ── VOICE NOTES ──────────────────────────────────────────────
+// ── URL VALIDATION HELPER ────────────────────────────────────
+/**
+ * Returns true only for valid https:// URLs.
+ * Rejects http://, ftp://, bare domains, etc.
+ */
+function isValidHttpsUrl(str) {
+    if (!str || typeof str !== 'string') return false;
+    try {
+        const u = new URL(str);
+        return u.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Auto-fix: if user typed http:// suggest upgrading to https://, else reject.
+ * Returns { valid: bool, url: string, error: string }
+ */
+function validateAndNormalizeUrl(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return { valid: false, error: 'URL cannot be empty.' };
+
+    // Auto-upgrade http:// → https://
+    let url = trimmed;
+    if (url.startsWith('http://')) {
+        url = 'https://' + url.slice(7);
+    }
+
+    // Add https:// if missing a scheme entirely
+    if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+    }
+
+    if (!isValidHttpsUrl(url)) {
+        return { valid: false, error: 'Only https:// URLs are accepted. Please use a secure link.' };
+    }
+    return { valid: true, url };
+}
+// ── SHARE LINK MODAL (https:// validated) ─────────────────────
+
+function openShareLinkModal() {
+    toggleAttachMenu();
+    document.getElementById('sl-title').value   = '';
+    document.getElementById('sl-url').value     = '';
+    document.getElementById('sl-desc').value    = '';
+    document.getElementById('sl-url-error').style.display = 'none';
+    document.getElementById('sl-url-icon').textContent    = '';
+    document.getElementById('sl-alert').innerHTML         = '';
+    document.getElementById('share-link-modal').classList.add('active');
+    setTimeout(() => document.getElementById('sl-url').focus(), 100);
+}
+
+function validateShareUrl(inputEl) {
+    const raw     = inputEl.value.trim();
+    const iconEl  = document.getElementById('sl-url-icon');
+    const errorEl = document.getElementById('sl-url-error');
+    if (!raw) { iconEl.textContent=''; errorEl.style.display='none'; inputEl.style.borderColor=''; return; }
+    const check = validateAndNormalizeUrl(raw);
+    if (check.valid) {
+        iconEl.textContent = '✅'; errorEl.style.display='none'; inputEl.style.borderColor='var(--secondary)';
+        if (check.url !== raw) inputEl.value = check.url;  // auto-upgrade http→https
+    } else {
+        iconEl.textContent = '❌'; errorEl.textContent = check.error; errorEl.style.display='block'; inputEl.style.borderColor='var(--danger)';
+    }
+}
+
+async function submitShareLink() {
+    const title   = document.getElementById('sl-title').value.trim();
+    const rawUrl  = document.getElementById('sl-url').value.trim();
+    const subtype = document.getElementById('sl-type').value;
+    const desc    = document.getElementById('sl-desc').value.trim();
+    const alertEl = document.getElementById('sl-alert');
+
+    if (!title) { showAlert(alertEl,'Please enter a title','error'); return; }
+    if (!rawUrl) { showAlert(alertEl,'Please enter a URL','error'); return; }
+    const check = validateAndNormalizeUrl(rawUrl);
+    if (!check.valid) { showAlert(alertEl,'⚠️ ' + check.error,'error'); return; }
+    const safeUrl = check.url;
+
+    // Send as link message
+    await apiFetch('/messages', { method:'POST', body: JSON.stringify({
+        sender_id:student.id, receiver_id:currentChatId,
+        message:title, message_type:'link', file_url:safeUrl
+    })});
+
+    // Save to shared-content Links section
+    await apiFetch('/shared-content', { method:'POST', body: JSON.stringify({
+        sender_id:student.id, receiver_id:currentChatId,
+        title, content_type:'link', media_type:subtype, file_url:safeUrl, description:desc
+    })});
+
+    showAlert(alertEl,'🔗 Link shared!','success');
+    setTimeout(()=>{ closeModal('share-link-modal'); loadMessages(); loadConversations(true); }, 800);
+}
+
 let mediaRecorder = null;
 let voiceChunks   = [];
 let voiceInterval = null;
@@ -773,12 +885,26 @@ async function startVoiceNote() {
             stream.getTracks().forEach(t => t.stop());
             // Format duration as m:ss for display in the bubble
             const durStr = formatAudioTime(voiceSeconds);
+
+            // ── Upload audio to server first, get a real URL ──
+            let audioUrl = b64;  // fallback to base64 if upload fails
+            try {
+                const upRes = await apiFetch('/voice-upload', {
+                    method: 'POST',
+                    body: JSON.stringify({ audio_b64: b64 })
+                });
+                if (upRes.ok && upRes.data.url) {
+                    audioUrl = upRes.data.url;
+                }
+            } catch(e) { /* keep base64 fallback */ }
+
             await apiFetch('/messages', { method:'POST', body: JSON.stringify({
-                sender_id: student.id, receiver_id: currentChatId,
-                message: durStr,                          // stored as duration text
+                sender_id:    student.id,
+                receiver_id:  currentChatId,
+                message:      durStr,          // duration text shown in bubble
                 message_type: 'voice_note',
-                file_url: b64,
-                file_name: `voice_${Date.now()}.webm`
+                file_url:     audioUrl,
+                file_name:    `voice_${Date.now()}.webm`
             })});
             await loadMessages(); await loadConversations(true);
         };

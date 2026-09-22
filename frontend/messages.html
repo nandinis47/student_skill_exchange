@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Messages - Student Skills Exchange</title>
+<title>Messages - SkillX</title>
 <link rel="stylesheet" href="css/style.css?v=2.0">
 <link rel="stylesheet" href="css/messages.css?v=2.0">
 </head>
 <body>
 <nav class="navbar">
-    <a href="dashboard.html" class="navbar-brand"><div class="logo-icon">🎓</div> Skills Exchange</a>
+    <a href="dashboard.html" class="navbar-brand"><div class="logo-icon">🎓</div> SkillX</a>
     <ul class="navbar-nav">
         <li><a href="dashboard.html" data-page="dashboard">🏠 Dashboard</a></li>
         <li><a href="skills.html"    data-page="skills">⚡ My Skills</a></li>
@@ -136,6 +136,7 @@
                     <button onclick="triggerLocation()">  <span class="ap-icon" style="background:#34a853;">📍</span>Location</button>
                     <button onclick="openDocPicker()">    <span class="ap-icon" style="background:#fbbc04;">📄</span>Document</button>
                     <button onclick="openPollModal()">    <span class="ap-icon" style="background:#9c27b0;">📊</span>Poll</button>
+                    <button onclick="openShareLinkModal()"><span class="ap-icon" style="background:#00bcd4;">🔗</span>Share Link</button>
                 </div>
                 <!-- Hidden file inputs -->
                 <input type="file" id="camera-input"   accept="image/*,video/*" capture="environment" style="display:none;" onchange="handleFileAttach(this,'camera')">
@@ -337,6 +338,49 @@
     </div>
     <div id="report-alert"></div>
     <button class="btn btn-danger" style="width:100%;justify-content:center;" onclick="submitReport()">Submit Report</button>
+  </div>
+</div>
+
+<!-- Share Link Modal (https:// validated) -->
+<div class="modal-overlay" id="share-link-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+        <h3>🔗 Share a Link</h3>
+        <button class="modal-close" onclick="closeModal('share-link-modal')">✕</button>
+    </div>
+    <div class="form-group">
+        <label>Title <span style="color:var(--danger)">*</span></label>
+        <input type="text" class="form-control" id="sl-title" placeholder="e.g. Python Tutorial, YouTube video…">
+    </div>
+    <div class="form-group">
+        <label>URL <span style="color:var(--danger)">*</span>
+            <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400;"> — must start with https://</span>
+        </label>
+        <div style="position:relative;">
+            <input type="url" class="form-control" id="sl-url"
+                   placeholder="https://example.com"
+                   oninput="validateShareUrl(this)">
+            <span id="sl-url-icon" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:1rem;"></span>
+        </div>
+        <div id="sl-url-error" style="font-size:0.78rem;color:var(--danger);margin-top:4px;display:none;"></div>
+    </div>
+    <div class="form-group">
+        <label>Link Type</label>
+        <select class="form-control" id="sl-type">
+            <option value="website">🌐 Website</option>
+            <option value="youtube">▶️ YouTube</option>
+            <option value="course">🎓 Course</option>
+            <option value="resource">🔖 Resource</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Description (optional)</label>
+        <textarea class="form-control" id="sl-desc" rows="2" placeholder="Add a note about this link…"></textarea>
+    </div>
+    <div id="sl-alert"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="submitShareLink()">
+        🔗 Share Link
+    </button>
   </div>
 </div>
 
