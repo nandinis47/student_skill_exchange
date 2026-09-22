@@ -2,7 +2,7 @@
 // API Helper - All backend calls go here
 // ============================================
 
-const API_BASE = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+const API_BASE = 'https://skillx-x3yd.onrender.com/api';
 
 // Current logged-in student (stored in sessionStorage)
 function getCurrentStudent() {
