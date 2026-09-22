@@ -45,6 +45,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'local-dev-secret-change-me')
 CORS(app, supports_credentials=True, origins=[
     'http://localhost:8080',
     'http://127.0.0.1:8080',
+    'https://skillx-frontend.onrender.com',
     'null'          # allows file:// origin as fallback
 ])
 
