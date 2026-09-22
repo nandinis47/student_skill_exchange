@@ -286,8 +286,9 @@
     </div>
 
     <script src="js/api.js?v=2.0"></script>
-    <!-- Google Identity Services SDK -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Firebase SDK (compat version — works in plain HTML without build tools) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script>
         // Redirect if already logged in
         if (getCurrentStudent()) {
@@ -332,146 +333,172 @@
             document.getElementById('login-password').value = 'pass123';
         }
 
-        // ── Google Sign-In ─────────────────────────────────────
-        // STEP 1: Get your Client ID from:
-        //   https://console.cloud.google.com → APIs & Services → Credentials
-        //   → Create Credentials → OAuth 2.0 Client ID → Web application
-        //   Add http://localhost:8080 to "Authorised JavaScript origins"
-        // STEP 2: Replace the string below with your actual Client ID
-        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+        // ================================================================
+        //  FIREBASE GOOGLE SIGN-IN
+        //  ---------------------------------------------------------------
+        //  WHERE TO GET YOUR CONFIG VALUES:
+        //
+        //  1. Go to  https://console.firebase.google.com
+        //  2. Select your project
+        //  3. Click the ⚙️ gear icon → "Project settings"
+        //  4. Scroll to "Your apps" → click your Web App (</>)
+        //  5. Under "SDK setup and configuration" choose "Config"
+        //  6. Copy the firebaseConfig object values into the fields below
+        //
+        //  You also need:
+        //  Authentication → Sign-in method → Google → Enable  ✓ (you did this)
+        //  Authentication → Settings → Authorised domains → localhost  (add if missing)
+        // ================================================================
 
-        let googleInitialized = false;
+        // ⬇️ PASTE YOUR FIREBASE CONFIG VALUES HERE
+        const firebaseConfig = {
+            apiKey:            "YOUR_API_KEY",
+            authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId:         "YOUR_PROJECT_ID",
+            storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId:             "YOUR_APP_ID"
+        };
 
-        function initGoogleSignIn() {
-            if (typeof google === 'undefined') return;  // SDK not loaded yet
-            if (GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) return; // not configured
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback:  handleGoogleCredential,
-                auto_select: false,
-                cancel_on_tap_outside: true,
-            });
-            googleInitialized = true;
+        // Check if config has been filled in
+        const FIREBASE_CONFIGURED = !firebaseConfig.apiKey.includes('YOUR_');
+
+        // Initialise Firebase only if configured
+        let firebaseApp  = null;
+        let firebaseAuth = null;
+
+        if (FIREBASE_CONFIGURED) {
+            try {
+                firebaseApp  = firebase.initializeApp(firebaseConfig);
+                firebaseAuth = firebase.auth();
+
+                // Persist auth state across page reloads
+                firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+                // On every page load, check if user is already signed in via Firebase
+                // If they have a valid Firebase session AND a SkillX session, skip login
+                firebaseAuth.onAuthStateChanged(async (fbUser) => {
+                    if (fbUser && !getCurrentStudent()) {
+                        // Firebase says signed in but SkillX session missing — re-establish
+                        await exchangeFirebaseTokenForSession(fbUser);
+                    }
+                });
+            } catch (err) {
+                console.error('Firebase init error:', err);
+            }
         }
 
-        // Called by Google SDK after user picks an account
-        async function handleGoogleCredential(response) {
-            const alertBox = document.getElementById('alert-box');
+        // ── MAIN: called when user clicks "Continue with Google" ──────────
+        async function loginWithGoogle() {
+            const alertBox  = document.getElementById('alert-box');
             const googleBtn = document.getElementById('google-btn');
 
-            if (!response.credential) {
-                showAlert(alertBox, 'Google sign-in was cancelled.', 'info');
-                if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = originalGoogleBtnHTML; }
+            // ── Guard: config not filled in ──
+            if (!FIREBASE_CONFIGURED) {
+                showAlert(alertBox,
+                    '⚙️ Firebase is not configured yet. ' +
+                    'Open <b>frontend/index.html</b>, find <b>firebaseConfig</b> ' +
+                    '(search for YOUR_API_KEY), and paste your values from ' +
+                    '<a href="https://console.firebase.google.com" target="_blank" style="color:var(--primary);">Firebase Console</a> ' +
+                    '→ Project Settings → General → Your apps.',
+                    'info');
                 return;
             }
 
+            if (!firebaseAuth) {
+                showAlert(alertBox, 'Firebase failed to initialise. Check the console for errors.', 'error');
+                return;
+            }
+
+            // ── Loading state ──
+            if (googleBtn) {
+                googleBtn.disabled = true;
+                googleBtn.innerHTML = '<span style="opacity:0.7;">Opening Google…</span>';
+            }
+
+            const resetBtn = () => {
+                if (googleBtn) {
+                    googleBtn.disabled = false;
+                    googleBtn.innerHTML = GOOGLE_BTN_HTML;
+                }
+            };
+
             try {
-                // Send ID token to our backend for secure server-side validation
+                // ── Open real Google account chooser popup ──
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('email');
+                provider.addScope('profile');
+
+                const result = await firebaseAuth.signInWithPopup(provider);
+                const fbUser = result.user;
+
+                await exchangeFirebaseTokenForSession(fbUser);
+
+            } catch (err) {
+                resetBtn();
+
+                if (err.code === 'auth/popup-closed-by-user' ||
+                    err.code === 'auth/cancelled-popup-request') {
+                    // Silent — user just closed the popup
+                    return;
+                }
+                if (err.code === 'auth/popup-blocked') {
+                    showAlert(alertBox,
+                        '🚫 Popup was blocked by your browser. ' +
+                        'Allow pop-ups for localhost:8080 in your browser settings, then try again.',
+                        'error');
+                    return;
+                }
+                if (err.code === 'auth/network-request-failed') {
+                    showAlert(alertBox, 'Network error. Check your internet connection.', 'error');
+                    return;
+                }
+                showAlert(alertBox, 'Google Sign-In error: ' + (err.message || err.code), 'error');
+            }
+        }
+
+        // ── Send Firebase ID token to Flask backend ───────────────────────
+        async function exchangeFirebaseTokenForSession(fbUser) {
+            const alertBox  = document.getElementById('alert-box');
+            const googleBtn = document.getElementById('google-btn');
+
+            try {
+                // Get fresh ID token from Firebase (auto-refreshed)
+                const idToken = await fbUser.getIdToken(/* forceRefresh */ true);
+
+                // Send to backend — Flask validates it and creates/finds user
                 const res = await apiFetch('/auth/google', {
                     method: 'POST',
-                    body: JSON.stringify({ id_token: response.credential })
+                    body: JSON.stringify({ id_token: idToken })
                 });
 
                 if (res.ok) {
                     setCurrentStudent(res.data.student);
                     window.location.href = 'dashboard.html';
                 } else {
-                    showAlert(alertBox, res.data.error || 'Google sign-in failed', 'error');
-                    if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = originalGoogleBtnHTML; }
+                    showAlert(alertBox, res.data.error || 'Sign-in failed on server', 'error');
+                    if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = GOOGLE_BTN_HTML; }
+                    // Sign out of Firebase to keep state consistent
+                    firebaseAuth && firebaseAuth.signOut();
                 }
             } catch (err) {
-                showAlert(alertBox, 'Network error during Google sign-in', 'error');
-                if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = originalGoogleBtnHTML; }
+                showAlert(alertBox, 'Failed to complete sign-in: ' + err.message, 'error');
+                if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = GOOGLE_BTN_HTML; }
+                firebaseAuth && firebaseAuth.signOut();
             }
         }
 
-        const originalGoogleBtnHTML = `
-            <svg class="social-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google`;
-
-        function loginWithGoogle() {
-            const alertBox  = document.getElementById('alert-box');
-            const googleBtn = document.getElementById('google-btn');
-
-            // ── Not yet configured ──────────────────────────
-            if (GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
-                showAlert(alertBox,
-                    '⚙️ Google Sign-In is not configured yet. ' +
-                    'Add your Google Cloud OAuth Client ID in index.html ' +
-                    '(search for GOOGLE_CLIENT_ID) to enable this.',
-                    'info');
-                return;
-            }
-
-            // ── SDK not loaded (popup blocked / offline) ────
-            if (typeof google === 'undefined' || !googleInitialized) {
-                showAlert(alertBox,
-                    'Google Sign-In SDK failed to load. ' +
-                    'Check your internet connection or allow pop-ups for this site.',
-                    'error');
-                return;
-            }
-
-            // ── Show loading state ──────────────────────────
-            if (googleBtn) {
-                googleBtn.disabled = true;
-                googleBtn.innerHTML = '<span style="opacity:0.7;">Connecting to Google…</span>';
-            }
-
-            // ── Open Google account chooser popup ───────────
-            try {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed()) {
-                        const reason = notification.getNotDisplayedReason();
-                        if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = originalGoogleBtnHTML; }
-
-                        if (reason === 'suppressed_by_user' || reason === 'opt_out_or_no_session') {
-                            // One-Tap suppressed — fall back to full popup
-                            google.accounts.id.revoke && google.accounts.oauth2?.initCodeClient;
-                            showAlert(alertBox,
-                                'Google One-Tap was blocked. ' +
-                                'Try clicking the button again or ' +
-                                'allow pop-ups for this site in your browser settings.',
-                                'info');
-                        } else {
-                            showAlert(alertBox,
-                                `Google Sign-In unavailable (${reason}). ` +
-                                'Use email/password login instead.',
-                                'error');
-                        }
-                    } else if (notification.isDismissedMoment()) {
-                        // User closed the popup
-                        if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = originalGoogleBtnHTML; }
-                    }
-                    // If credential is returned, handleGoogleCredential() fires automatically
-                });
-            } catch (err) {
-                if (googleBtn) { googleBtn.disabled = false; googleBtn.innerHTML = originalGoogleBtnHTML; }
-                showAlert(alertBox,
-                    'Could not open Google Sign-In: ' + err.message,
-                    'error');
-            }
-        }
-
+        // ── Apple (placeholder — requires Apple Developer account) ────────
         function loginWithApple() {
-            const alertBox = document.getElementById('alert-box');
-            showAlert(alertBox,
-                'Apple Sign-In requires an Apple Developer account and ' +
-                'backend integration. Coming soon.',
-                'info');
+            showAlert(
+                document.getElementById('alert-box'),
+                'Apple Sign-In requires an Apple Developer account. Coming soon.',
+                'info'
+            );
         }
 
-        // Initialise Google SDK as soon as it loads
-        window.addEventListener('load', () => {
-            initGoogleSignIn();
-            // Retry after 2s in case SDK loaded late
-            setTimeout(initGoogleSignIn, 2000);
-        });
+        // ── Store the original button HTML for reset ──────────────────────
+        const GOOGLE_BTN_HTML = document.getElementById('google-btn')?.innerHTML || '';
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();

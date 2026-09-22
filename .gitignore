@@ -35,3 +35,6 @@ desktop.ini
 test_api.py
 test_new_apis.py
 bust_cache.py
+
+# Firebase service account key — NEVER commit
+backend/firebase-service-account.json

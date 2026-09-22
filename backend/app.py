@@ -4,12 +4,39 @@ import mysql.connector
 from mysql.connector import Error
 import hashlib
 import os
-import requests as http_requests   # for Google token verification
+import requests as http_requests   # for Google token verification (fallback)
 
-# ── Google OAuth config ──────────────────────────────────────
-# REPLACE THIS WITH YOUR REAL CLIENT ID FROM Google Cloud Console
-# https://console.cloud.google.com → APIs & Services → Credentials
-GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'
+# ── Firebase Admin SDK for server-side token verification ─────
+# Download your service account key from:
+#   Firebase Console → Project Settings → Service Accounts
+#   → Generate new private key → save as backend/firebase-service-account.json
+#
+# If the file is absent, we fall back to Google tokeninfo endpoint.
+import firebase_admin
+from firebase_admin import credentials as fb_creds, auth as fb_auth
+
+_SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
+_firebase_app_initialized = False
+
+def _init_firebase_admin():
+    global _firebase_app_initialized
+    if _firebase_app_initialized:
+        return True
+    if os.path.exists(_SERVICE_ACCOUNT_FILE):
+        try:
+            cred = fb_creds.Certificate(_SERVICE_ACCOUNT_FILE)
+            firebase_admin.initialize_app(cred)
+            _firebase_app_initialized = True
+            print("✓ Firebase Admin SDK initialised from service account key")
+            return True
+        except Exception as e:
+            print(f"Firebase Admin init failed: {e}")
+    return False
+
+# Try to init on startup
+_init_firebase_admin()
+
+# ── Google tokeninfo fallback (no service account needed) ─────
 GOOGLE_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo'
 
 app = Flask(__name__)
@@ -132,36 +159,52 @@ def google_signin():
     if not token:
         return jsonify({'error': 'No token provided'}), 400
 
-    # ── 1. Verify token with Google ──────────────────────────
-    try:
-        resp = http_requests.get(
-            GOOGLE_TOKEN_INFO_URL,
-            params={'id_token': token},
-            timeout=10
-        )
-        info = resp.json()
-    except Exception as e:
-        return jsonify({'error': f'Token verification failed: {str(e)}'}), 500
+    # ── 1. Verify Firebase ID token ──────────────────────────
+    #
+    # Method A — Firebase Admin SDK (most secure, requires service account key)
+    # Method B — Google tokeninfo endpoint (works without service account)
+    #
+    if _firebase_app_initialized:
+        # ── Method A: Firebase Admin (cryptographic verification) ─
+        try:
+            decoded = fb_auth.verify_id_token(token)
+            email      = decoded.get('email', '').lower().strip()
+            name       = decoded.get('name', email.split('@')[0])
+            google_sub = decoded.get('sub', decoded.get('uid', ''))
+            email_verified = decoded.get('email_verified', False)
+        except fb_auth.InvalidIdTokenError as e:
+            return jsonify({'error': f'Invalid Firebase token: {str(e)}'}), 401
+        except fb_auth.ExpiredIdTokenError:
+            return jsonify({'error': 'Firebase token has expired. Please sign in again.'}), 401
+        except Exception as e:
+            return jsonify({'error': f'Token verification failed: {str(e)}'}), 500
+    else:
+        # ── Method B: Google tokeninfo endpoint (fallback) ────────
+        # Works for Firebase-issued tokens since Firebase uses Google's JWT infrastructure
+        try:
+            resp = http_requests.get(
+                GOOGLE_TOKEN_INFO_URL,
+                params={'id_token': token},
+                timeout=10
+            )
+            info = resp.json()
+        except Exception as e:
+            return jsonify({'error': f'Token verification failed: {str(e)}'}), 500
 
-    if 'error_description' in info or resp.status_code != 200:
-        return jsonify({'error': 'Invalid Google token: ' + info.get('error_description', 'unknown')}), 401
+        if 'error_description' in info or resp.status_code != 200:
+            return jsonify({'error': 'Invalid token: ' + info.get('error_description', 'unknown')}), 401
 
-    # ── 2. Check audience matches our client ID ───────────────
-    if GOOGLE_CLIENT_ID != 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com':
-        # Only enforce aud check when Client ID is configured
-        if info.get('aud') != GOOGLE_CLIENT_ID:
-            return jsonify({'error': 'Token audience mismatch'}), 401
+        email          = info.get('email', '').lower().strip()
+        name           = info.get('name', email.split('@')[0])
+        google_sub     = info.get('sub', '')
+        email_verified = info.get('email_verified') in ('true', True)
 
-    # ── 3. Require verified email ─────────────────────────────
-    if info.get('email_verified') not in ('true', True):
-        return jsonify({'error': 'Google email not verified'}), 401
-
-    email      = info.get('email', '').lower().strip()
-    name       = info.get('name', email.split('@')[0])
-    google_sub = info.get('sub', '')          # unique Google user ID
+    # ── 2. Require verified email ─────────────────────────────
+    if not email_verified:
+        return jsonify({'error': 'Email is not verified in Google/Firebase'}), 401
 
     if not email:
-        return jsonify({'error': 'No email in Google token'}), 401
+        return jsonify({'error': 'No email in token'}), 401
 
     # ── 4. Find or create user in DB ──────────────────────────
     conn = get_db()
