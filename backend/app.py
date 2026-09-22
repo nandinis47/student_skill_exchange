@@ -52,12 +52,12 @@ CORS(app, supports_credentials=True, origins=[
 # Database Configuration
 # ============================================
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'system',          # <-- Change to your MySQL password
-    'database': 'student_skill_exchange'
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', '3306')),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', 'system'),
+    'database': os.getenv('DB_NAME', 'student_skill_exchange'),
 }
-
 def get_db():
     """Get a database connection."""
     try:
