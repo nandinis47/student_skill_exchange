@@ -398,7 +398,7 @@ async function handlePicUpload(input) {
             bar.style.width='100%'; stat.textContent='✅ Done!';
             setTimeout(()=>{prog.style.display='none';bar.style.width='0%';},1500);
             // Show new pic in avatar element
-            const src = res.data.url.startsWith('/') ? `http://localhost:5000${res.data.url}` : res.data.url;
+            const src = res.data.url.startsWith('/') ? `${window.location.protocol}//${window.location.hostname}:5000${res.data.url}` : res.data.url;
             document.getElementById('p-avatar').innerHTML=`<img src="${src}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
             // ── FIX 3c: Save profile_pic in session so it persists across pages ──
             const updated = { ...getCurrentStudent(), profile_pic: res.data.url, avatar_key: null };
