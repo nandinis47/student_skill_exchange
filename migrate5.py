@@ -1,6 +1,12 @@
 """Migration 5 — Pin/Mute/Archive/Block/Notifications/Forward"""
+import os
 import mysql.connector
-conn = mysql.connector.connect(host='localhost',user='root',password='system',database='student_skill_exchange')
+conn = mysql.connector.connect(
+    host=os.getenv('DB_HOST', 'localhost'),
+    user=os.getenv('DB_USER', 'root'),
+    password=os.getenv('DB_PASSWORD'),
+    database=os.getenv('DB_NAME', 'student_skill_exchange')
+)
 cur = conn.cursor()
 
 # Chat preferences (pin, mute, archive, block)
