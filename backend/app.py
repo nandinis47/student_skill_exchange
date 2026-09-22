@@ -2239,7 +2239,7 @@ def upload_voice():
         fpath = os.path.join(UPLOAD_DIR, fname)
         with open(fpath, 'wb') as f:
             f.write(audio_bytes)
-        url = f'http://localhost:5000/uploads/{fname}'
+        url = f"{os.getenv('BACKEND_URL', 'http://127.0.0.1:5000')}/uploads/{fname}"
         return jsonify({'url': url}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
