@@ -16,7 +16,7 @@ import requests as http_requests   # for Google token verification (fallback)
 import firebase_admin
 from firebase_admin import credentials as fb_creds, auth as fb_auth
 
-_SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
+_SERVICE_ACCOUNT_FILE = '/etc/secrets/firebase-service-account.json'
 _firebase_app_initialized = False
 
 def _init_firebase_admin():
