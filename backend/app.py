@@ -1026,6 +1026,7 @@ def get_domains():
 
     cursor.close()
     conn.close()
+    print("emojis are active to use nandu",domains)
 
     return jsonify(domains)
 
