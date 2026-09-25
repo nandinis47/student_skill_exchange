@@ -341,7 +341,7 @@ function getProfileDisplay(student) {
     if (!student) return null;
     if (student.profile_pic) {
         // Uploaded photo â€” prepend backend base if relative path
-        return { type: 'img', src: student.profile_pic.startsWith('/') ? `${window.location.protocol}//${window.location.hostname}:5000${student.profile_pic}` : student.profile_pic };
+        return { type: 'img', src: student.profile_pic.startsWith('/') ? `https://skillx-x3yd.onrender.com${student.profile_pic}` : student.profile_pic };
     }
     if (student.avatar_key) {
         return { type: 'emoji', emoji: student.avatar_key };
