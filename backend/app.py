@@ -1008,11 +1008,26 @@ def get_stats():
 def get_domains():
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM skill_domains ORDER BY domain_name")
-    domains = cursor.fetchall()
-    cursor.close(); conn.close()
-    return jsonify(domains)
 
+    cursor.execute("""
+        SELECT domain_id, domain_name, HEX(domain_icon) AS icon_hex, created_at
+        FROM skill_domains
+        ORDER BY domain_name
+    """)
+
+    domains = cursor.fetchall()
+
+    for domain in domains:
+        try:
+            domain['domain_icon'] = bytes.fromhex(domain.pop('icon_hex')).decode('utf-8')
+        except Exception:
+            domain['domain_icon'] = '📚'
+            domain.pop('icon_hex', None)
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(domains)
 
 @app.route('/api/domains', methods=['POST'])
 def add_domain():
