@@ -57,7 +57,7 @@ DB_CONFIG = {
     'port': int(os.getenv('DB_PORT', '3306')),
     'user': os.getenv('DB_USER', 'root'),
     'password': os.getenv('DB_PASSWORD', 'system'),
-    'database': os.getenv('DB_NAME', 'student_skill_exchange'),
+    'database': os.getenv('DB_NAME', 'student_skill_exchange'),'charset':'utf8mb4',
 }
 def get_db():
     """Get a database connection."""
