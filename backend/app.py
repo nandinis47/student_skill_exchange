@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session,Response
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 import hashlib
 import os
 import re
+import json
 import requests as http_requests   # for Google token verification (fallback)
 
 # ── Firebase Admin SDK for server-side token verification ─────
@@ -1028,7 +1029,10 @@ def get_domains():
     conn.close()
     print("emojis are active to use nandu",domains)
 
-    return jsonify(domains)
+    return Response(
+    json.dumps(domains, ensure_ascii=False,default=str),
+    content_type='application/json; charset=utf-8'
+)
 
 @app.route('/api/domains', methods=['POST'])
 def add_domain():
